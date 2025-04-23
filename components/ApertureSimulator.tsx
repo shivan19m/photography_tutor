@@ -52,7 +52,7 @@ const ApertureSimulator: React.FC<ApertureSimulatorProps> = ({ className = '' })
           }}
         />
         
-        {/* Foreground (sharp) layer with mask */}
+        {/* Foreground (sharp) layer with mask
         <div className="absolute inset-0">
           <div className="absolute inset-[20%] z-10">
             <Image
@@ -63,7 +63,7 @@ const ApertureSimulator: React.FC<ApertureSimulatorProps> = ({ className = '' })
               style={{ objectPosition: 'center' }}
             />
           </div>
-        </div>
+        </div> */}
         
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
           <div className="flex items-center justify-between text-white">

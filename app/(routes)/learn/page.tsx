@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import ApertureSimulator from '@/components/ApertureSimulator';
+import IsoSimulator from '@/components/IsoSimulator';
+import ShutterSimulator from '@/components/ShutterSimulator';
 
 const topics = [
   {
@@ -106,6 +108,10 @@ export default function LearnPage() {
             <div>
               {activeTopic.id === 'aperture' ? (
                 <ApertureSimulator />
+              ) : activeTopic.id === 'iso' ? (
+                <IsoSimulator />
+              ) : activeTopic.id === 'shutter' ? (
+                <ShutterSimulator />
               ) : (
                 <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl group">
                   <Image
