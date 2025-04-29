@@ -2,306 +2,300 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
+// Sample quiz questions (you'll need to add your own images)
 const quizQuestions = [
   {
     id: 1,
-    startingImage: '/images/iso-dark.jpg',
-    targetImage: '/images/iso-bright.jpg',
-    correctSettings: {
+    baseImage: '/images/low-light.jpg',
+    targetSettings: {
       iso: 1600,
       aperture: 2.8,
       shutterSpeed: 60,
     },
-    explanation: 'In low light conditions, increasing ISO helps brighten the image at the cost of some noise.',
-    focusOn: 'iso',
+    explanation: 'Low light scenario: Higher ISO needed to brighten the image while maintaining a reasonable shutter speed.',
   },
   {
     id: 2,
-    startingImage: '/images/aperture-sharp.jpg',
-    targetImage: '/images/aperture-blur.jpg',
-    correctSettings: {
-      iso: 400,
+    baseImage: '/images/portrait.jpg',
+    targetSettings: {
+      iso: 100,
       aperture: 1.8,
-      shutterSpeed: 125,
+      shutterSpeed: 250,
     },
-    explanation: 'A wider aperture (smaller f-number) creates a shallower depth of field, blurring the background.',
-    focusOn: 'aperture',
+    explanation: 'Portrait photography: Wide aperture (f/1.8) for shallow depth of field, low ISO for clean image quality.',
   },
   {
     id: 3,
-    startingImage: '/images/shutter-blur.jpg',
-    targetImage: '/images/shutter-sharp.jpg',
-    correctSettings: {
+    baseImage: '/images/sports.jpg',
+    targetSettings: {
       iso: 400,
-      aperture: 5.6,
-      shutterSpeed: 500,
+      aperture: 4.0,
+      shutterSpeed: 1000,
     },
-    explanation: 'Faster shutter speeds freeze motion, while slower speeds create motion blur.',
-    focusOn: 'shutterSpeed',
+    explanation: 'Sports/Action: Fast shutter speed to freeze motion, moderate aperture for sufficient depth of field.',
   },
+  {
+    id: 4,
+    baseImage: '/images/macro.jpg',
+    targetSettings: {
+      iso: 200,
+      aperture: 8.0,
+      shutterSpeed: 250,
+    },
+    explanation: 'Macro photography: Medium aperture for adequate depth of field on close subjects.',
+  },
+  {
+    id: 5,
+    baseImage: '/images/waterfall.jpg',
+    targetSettings: {
+      iso: 100,
+      aperture: 16.0,
+      shutterSpeed: 15,
+    },
+    explanation: 'Waterfall long exposure: Low ISO and small aperture to allow for slow shutter speed motion blur.',
+  }
 ];
-
-function SettingSlider({
-  label,
-  value,
-  onChange,
-  min,
-  max,
-  formatValue = (v: number) => v.toString(),
-  isFocused = false,
-  icon,
-}: {
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-  min: number;
-  max: number;
-  formatValue?: (value: number) => string;
-  isFocused?: boolean;
-  icon?: string;
-}) {
-  return (
-    <div className={`w-full transition-all ${isFocused ? 'scale-105' : ''}`}>
-      <div className="flex justify-between items-center mb-2">
-        <div className="flex items-center space-x-2">
-          {icon && <span className="text-xl">{icon}</span>}
-          <label className={`text-sm font-medium ${isFocused ? 'text-blue-600' : 'text-gray-700'}`}>
-            {label}
-            {isFocused && (
-              <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
-                Focus on this
-              </span>
-            )}
-          </label>
-        </div>
-        <span className={`text-sm font-mono ${isFocused ? 'text-blue-600' : 'text-gray-500'}`}>
-          {formatValue(value)}
-        </span>
-      </div>
-      <div className="relative">
-        <div 
-          className="absolute -inset-4 bg-blue-50 rounded-xl opacity-0 transition-opacity duration-300 -z-10"
-          style={{ opacity: isFocused ? 0.5 : 0 }} 
-        />
-        <input
-          type="range"
-          min={min}
-          max={max}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className={`w-full h-2 rounded-lg appearance-none cursor-pointer
-            ${isFocused 
-              ? 'bg-gradient-to-r from-blue-300 to-blue-500'
-              : 'bg-gray-200'}`}
-          step={(max - min) / 100}
-        />
-      </div>
-    </div>
-  );
-}
 
 export default function QuizPage() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [attempts, setAttempts] = useState(0);
   const [settings, setSettings] = useState({
     iso: 100,
     aperture: 1.4,
-    shutterSpeed: 2,
+    shutterSpeed: 60,
   });
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [progress, setProgress] = useState<Record<number, boolean>>({});
-  const [showHint, setShowHint] = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [score, setScore] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
 
   const formatAperture = (value: number) => `f/${value.toFixed(1)}`;
   const formatShutterSpeed = (value: number) => `1/${value}`;
   const formatISO = (value: number) => `${value}`;
 
+  // Calculate visual effects based on camera settings
+  const getImageEffects = (imageSettings: typeof settings) => {
+    const isoBrightness = Math.log2(imageSettings.iso / 100) * 0.5 + 1; // Logarithmic brightness
+    const apertureBlur = Math.max(0, (1 / imageSettings.aperture) * 3); // More blur for wider apertures
+    const motionBlur = Math.max(0, (1 / imageSettings.shutterSpeed) * 15); // Motion blur for slow shutter
+
+    return {
+      filter: `
+        brightness(${isoBrightness})
+        blur(${apertureBlur}px)
+      `,
+      transform: `scale(1.02)`,
+      transition: 'filter 0.3s ease-out',
+    };
+  };
+
   const checkAnswer = () => {
-    const tolerance = 0.1;
-    const isCorrect = (actual: number, expected: number) => 
+    const tolerance = 0.2; // 20% tolerance
+    const targetSettings = quizQuestions[currentQuestion].targetSettings;
+    
+    const isWithinTolerance = (actual: number, expected: number) => 
       Math.abs((actual - expected) / expected) <= tolerance;
 
     const results = {
-      iso: isCorrect(settings.iso, quizQuestions[currentQuestion].correctSettings.iso),
-      aperture: isCorrect(settings.aperture, quizQuestions[currentQuestion].correctSettings.aperture),
-      shutterSpeed: isCorrect(settings.shutterSpeed, quizQuestions[currentQuestion].correctSettings.shutterSpeed),
+      iso: isWithinTolerance(settings.iso, targetSettings.iso),
+      aperture: isWithinTolerance(settings.aperture, targetSettings.aperture),
+      shutterSpeed: isWithinTolerance(settings.shutterSpeed, targetSettings.shutterSpeed),
     };
 
     const allCorrect = Object.values(results).every(Boolean);
-    if (allCorrect) {
-      setProgress(prev => ({ ...prev, [currentQuestion]: true }));
-    }
-    setShowFeedback(true);
+    setAttempts(prev => prev + 1);
 
-    return results;
+    if (allCorrect) {
+      setFeedback('Perfect match! ' + quizQuestions[currentQuestion].explanation);
+      setIsCorrect(true);
+      setScore(prev => prev + 1);
+      setTimeout(() => {
+        if (currentQuestion === quizQuestions.length - 1) {
+          setIsComplete(true);
+        } else {
+          nextQuestion();
+        }
+      }, 3000);
+    } else if (attempts >= 1) {
+      setFeedback('Not quite right. ' + quizQuestions[currentQuestion].explanation);
+      setTimeout(() => {
+        if (currentQuestion === quizQuestions.length - 1) {
+          setIsComplete(true);
+        } else {
+          nextQuestion();
+        }
+      }, 3000);
+    } else {
+      const incorrect = Object.entries(results)
+        .filter(([_, isCorrect]) => !isCorrect)
+        .map(([setting]) => setting)
+        .join(', ');
+      setFeedback(`Try adjusting your ${incorrect}. One more attempt!`);
+    }
   };
 
-  const progressPercentage = (Object.values(progress).filter(Boolean).length / quizQuestions.length) * 100;
+  const nextQuestion = () => {
+    if (currentQuestion < quizQuestions.length - 1) {
+      setCurrentQuestion(prev => prev + 1);
+      setAttempts(0);
+      setFeedback('');
+      setIsCorrect(false);
+      setSettings({
+        iso: 100,
+        aperture: 1.4,
+        shutterSpeed: 60,
+      });
+    }
+  };
+
+  if (isComplete) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg text-center">
+          <h2 className="text-3xl font-bold text-gray-900">Quiz Complete!</h2>
+          <div className="space-y-4">
+            <p className="text-xl text-gray-600">
+              You scored {score} out of {quizQuestions.length}
+            </p>
+            <p className="text-gray-500">
+              {score === quizQuestions.length 
+                ? 'Perfect score! You\'re a photography master!' 
+                : 'Keep practicing to improve your camera settings knowledge!'}
+            </p>
+            <div className="pt-4">
+              <Link
+                href="/learn"
+                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Back to Lessons
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
-      {/* Progress Bar */}
-      <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div 
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500"
-          style={{ width: `${progressPercentage}%` }}
-        />
-      </div>
-
+    <div className="max-w-6xl mx-auto p-8 space-y-6">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">Photography Settings Quiz</h1>
-        <p className="text-gray-600">
-          Adjust the settings to match the target image on the right
+        <h1 className="text-3xl font-bold text-white">Match the Image Settings</h1>
+        <p className="text-white/80">
+          Adjust the sliders to match the settings of the target image. You have 2 attempts.
         </p>
+        <div className="text-sm text-white/70">
+          Question {currentQuestion + 1} of {quizQuestions.length} | Attempts: {attempts}/2 | Score: {score}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-8">
-        {/* Starting Image */}
-        <div className="relative aspect-[3/4] group">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl transform -rotate-1" />
-          <div className="relative rounded-2xl overflow-hidden shadow-xl">
-            <Image
-              src={quizQuestions[currentQuestion].startingImage}
-              alt="Starting image"
-              fill
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-            <div className="absolute bottom-4 left-4 text-white">
-              <h3 className="font-medium text-lg">Starting Image</h3>
-              <p className="text-sm text-white/80">Current settings applied</p>
+        {/* Left side: Your image and controls */}
+        <div className="space-y-4">
+          {/* Your adjustable image */}
+          <div className="space-y-2">
+            <div className="relative aspect-video rounded-xl overflow-hidden shadow-lg">
+              <Image
+                src={quizQuestions[currentQuestion].baseImage}
+                alt="Your image"
+                fill
+                className="object-cover"
+                style={getImageEffects(settings)}
+              />
+            </div>
+            <p className="text-center font-medium text-white">Your Image</p>
+          </div>
+
+          {/* Settings Controls */}
+          <div className="bg-black/80 backdrop-blur-sm rounded-xl p-4 shadow-lg space-y-3">
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-white">ISO</label>
+                <input
+                  type="range"
+                  min={100}
+                  max={3200}
+                  value={settings.iso}
+                  onChange={(e) => setSettings({ ...settings, iso: Number(e.target.value) })}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  step={100}
+                />
+                <div className="flex justify-between text-sm text-white/80">
+                  <span>100</span>
+                  <span>{formatISO(settings.iso)}</span>
+                  <span>3200</span>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-white">Aperture</label>
+                <input
+                  type="range"
+                  min={1.4}
+                  max={16}
+                  value={settings.aperture}
+                  onChange={(e) => setSettings({ ...settings, aperture: Number(e.target.value) })}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  step={0.1}
+                />
+                <div className="flex justify-between text-sm text-white/80">
+                  <span>f/1.4</span>
+                  <span>{formatAperture(settings.aperture)}</span>
+                  <span>f/16</span>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-white">Shutter Speed</label>
+                <input
+                  type="range"
+                  min={15}
+                  max={4000}
+                  value={settings.shutterSpeed}
+                  onChange={(e) => setSettings({ ...settings, shutterSpeed: Number(e.target.value) })}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  step={15}
+                />
+                <div className="flex justify-between text-sm text-white/80">
+                  <span>1/15</span>
+                  <span>{formatShutterSpeed(settings.shutterSpeed)}</span>
+                  <span>1/4000</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center space-y-2 pt-1">
+              {feedback && (
+                <p className={`text-sm font-medium ${isCorrect ? 'text-green-400' : 'text-blue-400'}`}>
+                  {feedback}
+                </p>
+              )}
+              <button
+                onClick={checkAnswer}
+                disabled={isCorrect}
+                className="px-8 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                Check Settings
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Target Image */}
-        <div className="relative aspect-[3/4] group">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-500 rounded-2xl transform rotate-1" />
-          <div className="relative rounded-2xl overflow-hidden shadow-xl">
+        {/* Right side: Target image */}
+        <div className="space-y-2">
+          <div className="relative aspect-video rounded-xl overflow-hidden shadow-lg">
             <Image
-              src={quizQuestions[currentQuestion].targetImage}
+              src={quizQuestions[currentQuestion].baseImage}
               alt="Target image"
               fill
               className="object-cover"
+              style={getImageEffects(quizQuestions[currentQuestion].targetSettings)}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-            <div className="absolute bottom-4 left-4 text-white">
-              <h3 className="font-medium text-lg">Target Image</h3>
-              <p className="text-sm text-white/80">Try to match these settings</p>
-            </div>
           </div>
+          <p className="text-center font-medium text-white">Target Image</p>
         </div>
       </div>
-      
-      {/* Settings Controls */}
-      <div className="space-y-6 bg-white rounded-2xl p-8 shadow-lg">
-        <div className="space-y-4">
-          <SettingSlider
-            label="ISO"
-            min={100}
-            max={2100}
-            value={settings.iso}
-            onChange={(value) => setSettings({ ...settings, iso: value })}
-            formatValue={formatISO}
-            isFocused={quizQuestions[currentQuestion].focusOn === 'iso'}
-            icon="📷"
-          />
-          <SettingSlider
-            label="Aperture"
-            min={1.4}
-            max={22}
-            value={settings.aperture}
-            onChange={(value) => setSettings({ ...settings, aperture: value })}
-            formatValue={formatAperture}
-            isFocused={quizQuestions[currentQuestion].focusOn === 'aperture'}
-            icon="🎯"
-          />
-          <SettingSlider
-            label="Shutter Speed"
-            min={2}
-            max={500}
-            value={settings.shutterSpeed}
-            onChange={(value) => setSettings({ ...settings, shutterSpeed: value })}
-            formatValue={formatShutterSpeed}
-            isFocused={quizQuestions[currentQuestion].focusOn === 'shutterSpeed'}
-            icon="⚡"
-          />
-        </div>
-
-        <div className="flex items-center justify-between pt-4">
-          <button
-            onClick={() => setCurrentQuestion(prev => Math.max(0, prev - 1))}
-            className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50"
-            disabled={currentQuestion === 0}
-          >
-            Previous
-          </button>
-
-          <div className="flex space-x-4">
-            <button
-              onClick={() => setShowHint(true)}
-              className="px-6 py-2 text-blue-600 hover:text-blue-700 transition-colors"
-            >
-              Show Hint
-            </button>
-            <button
-              onClick={checkAnswer}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Check Answer
-            </button>
-          </div>
-
-          <button
-            onClick={() => {
-              setCurrentQuestion(prev => Math.min(quizQuestions.length - 1, prev + 1));
-              setShowFeedback(false);
-              setShowHint(false);
-            }}
-            className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50"
-            disabled={currentQuestion === quizQuestions.length - 1}
-          >
-            Next
-          </button>
-        </div>
-      </div>
-
-      {/* Feedback Modal */}
-      {showFeedback && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full space-y-4">
-            <h3 className="text-2xl font-bold text-gray-900">
-              {Object.values(checkAnswer()).every(Boolean) ? 'Great job! 🎉' : 'Keep trying! 💪'}
-            </h3>
-            <p className="text-gray-600">{quizQuestions[currentQuestion].explanation}</p>
-            <button
-              onClick={() => setShowFeedback(false)}
-              className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Continue
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Hint Modal */}
-      {showHint && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full space-y-4">
-            <h3 className="text-2xl font-bold text-gray-900">Hint 💡</h3>
-            <p className="text-gray-600">
-              Focus on adjusting the {quizQuestions[currentQuestion].focusOn} setting first.
-              Look at the differences between the starting and target images for clues.
-            </p>
-            <button
-              onClick={() => setShowHint(false)}
-              className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Got it
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
-} 
+}
