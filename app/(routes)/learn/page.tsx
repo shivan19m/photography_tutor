@@ -61,7 +61,7 @@ export default function LearnPage() {
 
       {/* Navigation */}
       <div className="flex justify-center space-x-4">
-        {topics.map((topic) => (
+        {topics.map((topic, index) => (
           <button
             key={topic.id}
             onClick={() => setActiveTopic(topic)}
@@ -103,6 +103,39 @@ export default function LearnPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+              {/* Navigation Buttons */}
+              <div className="flex justify-between pt-4">
+                <button
+                  onClick={() => {
+                    const currentIndex = topics.findIndex(t => t.id === activeTopic.id);
+                    if (currentIndex > 0) {
+                      setActiveTopic(topics[currentIndex - 1]);
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
+                    topics.findIndex(t => t.id === activeTopic.id) === 0
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-blue-500 text-white shadow-lg hover:bg-blue-600'
+                  }`}
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => {
+                    const currentIndex = topics.findIndex(t => t.id === activeTopic.id);
+                    if (currentIndex < topics.length - 1) {
+                      setActiveTopic(topics[currentIndex + 1]);
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
+                    topics.findIndex(t => t.id === activeTopic.id) === topics.length - 1
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-blue-500 text-white shadow-lg hover:bg-blue-600'
+                  }`}
+                >
+                  Next
+                </button>
               </div>
             </div>
             <div>

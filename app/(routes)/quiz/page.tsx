@@ -55,6 +55,16 @@ const quizQuestions = [
       shutterSpeed: 15,
     },
     explanation: 'Waterfall long exposure: Low ISO and small aperture to allow for slow shutter speed motion blur.',
+  },
+  {
+    id: 6,
+    baseImage: '/images/hero-image.jpg',
+    targetSettings: {
+      iso: 200,
+      aperture: 5.6,
+      shutterSpeed: 125,
+    },
+    explanation: 'General photography: Balanced settings for a well-exposed image with good depth of field.',
   }
 ];
 
