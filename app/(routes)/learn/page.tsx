@@ -17,6 +17,36 @@ const topics = [
       { text: 'High ISO (1600+): Use in low-light situations', icon: '🌙' },
     ],
     imagePath: '/images/iso-example.jpg',
+    examples: [
+      {
+        title: 'Low ISO Example',
+        description: 'Notice how the image maintains excellent quality with minimal noise. This is ideal for well-lit scenes.',
+        settings: 'ISO 100, f/8, 1/125s'
+      },
+      {
+        title: 'High ISO Example',
+        description: 'The image is brighter but shows more noise/grain. This is a trade-off we make in low-light situations.',
+        settings: 'ISO 3200, f/4, 1/60s'
+      }
+    ],
+    mcQuestion: {
+      question: "What does increasing the ISO setting on your camera do?",
+      options: [
+        { text: "Reduces motion blur", isCorrect: false },
+        { text: "Narrows the depth of field", isCorrect: false },
+        { text: "Makes the sensor more sensitive to light", isCorrect: true },
+        { text: "Increases image sharpness", isCorrect: false }
+      ]
+    },
+    imageDetails: {
+      title: "Starry Night Sky with Milky Way",
+      description: "Bright stars with minimal trails, lots of stars visible, night setting.",
+      settings: {
+        iso: "3200–6400 – High ISO to capture enough light from stars in a dark environment.",
+        shutterSpeed: "15–25 seconds – Long exposure to gather light, but short enough to avoid significant star trailing.",
+        aperture: "f/2.8 or wider (e.g., f/1.8) – A wide aperture to let in as much light as possible."
+      }
+    }
   },
   {
     id: 'aperture',
@@ -28,6 +58,36 @@ const topics = [
       { text: 'Narrow (f/11-f/22): Best for landscapes', icon: '🏔️' },
     ],
     imagePath: '/images/aperture-example.jpg',
+    examples: [
+      {
+        title: 'Wide Aperture Example',
+        description: 'Notice the beautiful background blur (bokeh) effect. The subject is sharp while the background is soft.',
+        settings: 'f/1.8, ISO 100, 1/250s'
+      },
+      {
+        title: 'Narrow Aperture Example',
+        description: 'Everything from foreground to background is in focus, perfect for landscape photography.',
+        settings: 'f/16, ISO 100, 1/30s'
+      }
+    ],
+    mcQuestion: {
+      question: "Which aperture setting gives you the shallowest depth of field (most background blur)?",
+      options: [
+        { text: "f/16", isCorrect: false },
+        { text: "f/8", isCorrect: false },
+        { text: "f/5.6", isCorrect: false },
+        { text: "f/1.8", isCorrect: true }
+      ]
+    },
+    imageDetails: {
+      title: "Spring Park with Flowers and Trees",
+      description: "Everything from the foreground flowers to the background is in sharp focus. It's well-lit, likely shot in daylight.",
+      settings: {
+        aperture: "f/11 or higher – A small aperture was used to achieve a deep depth of field so the entire scene is sharp.",
+        shutterSpeed: "1/125s to 1/250s – Fast enough to avoid motion blur in daylight, especially since there's no visible motion.",
+        iso: "100 – Plenty of light, so a low ISO for clean, noise-free image quality."
+      }
+    }
   },
   {
     id: 'shutter',
@@ -39,15 +99,83 @@ const topics = [
       { text: 'Slow (1/60 or slower): Low light/motion blur', icon: '💫' },
     ],
     imagePath: '/images/shutter-example.jpg',
+    examples: [
+      {
+        title: 'Fast Shutter Example',
+        description: 'The water droplets are frozen in mid-air, capturing the exact moment of the splash.',
+        settings: '1/1000s, f/5.6, ISO 400'
+      },
+      {
+        title: 'Slow Shutter Example',
+        description: 'The water appears silky smooth, creating an artistic long-exposure effect.',
+        settings: '1/4s, f/16, ISO 100'
+      }
+    ],
+    mcQuestion: {
+      question: "What happens when you use a slow shutter speed (e.g., 1 second)?",
+      options: [
+        { text: "You freeze fast motion", isCorrect: false },
+        { text: "You may capture motion blur", isCorrect: true },
+        { text: "The image becomes darker in low light", isCorrect: false },
+        { text: "The ISO automatically lowers", isCorrect: false }
+      ]
+    },
+    imageDetails: {
+      title: "Smooth Waterfall Flow",
+      description: "The water is silky smooth, a signature of long exposure.",
+      settings: {
+        shutterSpeed: "1 to 4 seconds (or longer) – A long shutter speed to blur the motion of water.",
+        aperture: "f/8 to f/16 – Narrow aperture to reduce light for a longer exposure, and ensure more of the scene is in focus.",
+        iso: "100 or 200 – Low ISO to minimize noise during the long exposure and to prevent overexposure."
+      }
+    }
   },
 ];
 
 export default function LearnPage() {
   const [activeTopic, setActiveTopic] = useState(topics[0]);
   const [showTip, setShowTip] = useState<number | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [visitedTopics, setVisitedTopics] = useState<Set<string>>(new Set(['iso']));
+
+  const handleAnswerSubmit = () => {
+    if (selectedAnswer !== null) {
+      setShowFeedback(true);
+    }
+  };
+
+  const handleNext = () => {
+    const currentIndex = topics.findIndex(t => t.id === activeTopic.id);
+    if (currentIndex < topics.length - 1) {
+      const nextTopic = topics[currentIndex + 1];
+      setActiveTopic(nextTopic);
+      setVisitedTopics(prev => new Set([...prev, nextTopic.id]));
+      setSelectedAnswer(null);
+      setShowFeedback(false);
+    }
+  };
+
+  const handlePrevious = () => {
+    const currentIndex = topics.findIndex(t => t.id === activeTopic.id);
+    if (currentIndex > 0) {
+      setActiveTopic(topics[currentIndex - 1]);
+      setSelectedAnswer(null);
+      setShowFeedback(false);
+    }
+  };
+
+  const canAccessTopic = (topicId: string) => {
+    const topicIndex = topics.findIndex(t => t.id === topicId);
+    if (topicIndex === 0) return true; // ISO is always accessible
+    const previousTopic = topics[topicIndex - 1];
+    return visitedTopics.has(previousTopic.id);
+  };
+
+  const allTopicsVisited = visitedTopics.size === topics.length;
 
   return (
-    <div className="space-y-12">
+    <div className="max-w-7xl mx-auto p-8 space-y-12">
       {/* Header */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl transform -rotate-1" />
@@ -64,11 +192,20 @@ export default function LearnPage() {
         {topics.map((topic, index) => (
           <button
             key={topic.id}
-            onClick={() => setActiveTopic(topic)}
+            onClick={() => {
+              if (canAccessTopic(topic.id)) {
+                setActiveTopic(topic);
+                setVisitedTopics(prev => new Set([...prev, topic.id]));
+                setSelectedAnswer(null);
+                setShowFeedback(false);
+              }
+            }}
             className={`px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
               activeTopic.id === topic.id
                 ? 'bg-blue-500 text-white shadow-lg'
-                : 'bg-white text-gray-600 hover:bg-gray-50 shadow'
+                : canAccessTopic(topic.id)
+                ? 'bg-white text-gray-600 hover:bg-gray-50 shadow'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
           >
             {topic.title}
@@ -80,80 +217,137 @@ export default function LearnPage() {
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl transform rotate-1 opacity-10" />
         <div className="relative bg-white rounded-3xl p-8 shadow-xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <h2 className="text-3xl font-bold text-gray-900">{activeTopic.title}</h2>
-              <p className="text-gray-600 text-lg leading-relaxed">
-                {activeTopic.description}
-              </p>
+          <div className="space-y-12">
+            {/* Main Content */}
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">{activeTopic.title}</h2>
+                <p className="text-gray-600 text-lg leading-relaxed">
+                  {activeTopic.description}
+                </p>
+              </div>
+
+              {/* Tips and Simulator Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Tips */}
+                <div className="space-y-4 flex flex-col justify-center">
+                  {activeTopic.tips.map((tip, index) => (
+                    <div
+                      key={index}
+                      className="relative group"
+                      onMouseEnter={() => setShowTip(index)}
+                      onMouseLeave={() => setShowTip(null)}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl transform group-hover:rotate-1 transition-transform" />
+                      <div className="relative bg-white p-4 rounded-xl shadow-md group-hover:shadow-lg transition-shadow">
+                        <div className="flex items-center justify-center space-x-3">
+                          <span className="text-2xl">{tip.icon}</span>
+                          <p className="text-gray-700 text-center">{tip.text}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Simulator */}
+                <div className="bg-white rounded-xl p-4 shadow-lg">
+                  {activeTopic.id === 'aperture' ? (
+                    <ApertureSimulator />
+                  ) : activeTopic.id === 'iso' ? (
+                    <IsoSimulator />
+                  ) : activeTopic.id === 'shutter' ? (
+                    <ShutterSimulator />
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            {/* Examples and Image Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-20">
+              {/* Example Image */}
+              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl group">
+                <Image
+                  src={activeTopic.imagePath}
+                  alt={`${activeTopic.title} example`}
+                  fill
+                  className="object-cover transform group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <h4 className="text-xl font-semibold mb-3">{activeTopic.imageDetails.title}</h4>
+                  <p className="text-base mb-4 opacity-90">{activeTopic.imageDetails.description}</p>
+                  <div className="space-y-2 text-sm">
+                    {Object.entries(activeTopic.imageDetails.settings).map(([key, value]) => (
+                      <p key={key} className="font-mono bg-black/30 p-2 rounded">
+                        <span className="font-semibold">{key.charAt(0).toUpperCase() + key.slice(1)}:</span> {value}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Examples Section */}
+              <div className="space-y-6">
+                <h3 className="text-2xl font-semibold text-gray-900">Practical Examples</h3>
+                {activeTopic.examples.map((example, index) => (
+                  <div key={index} className="bg-gray-50 rounded-xl p-6 space-y-3">
+                    <h4 className="font-medium text-gray-900 text-lg">{example.title}</h4>
+                    <p className="text-gray-600">{example.description}</p>
+                    <p className="text-sm text-gray-500 font-mono bg-gray-100 p-2 rounded">{example.settings}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* MC Question */}
+            <div className="max-w-2xl mx-auto mt-16 bg-white rounded-xl p-8 shadow-lg space-y-6">
+              <h3 className="text-2xl font-semibold text-gray-900 text-center">Quick Check</h3>
+              <p className="text-gray-700 text-lg text-center">{activeTopic.mcQuestion.question}</p>
               <div className="space-y-4">
-                {activeTopic.tips.map((tip, index) => (
+                {activeTopic.mcQuestion.options.map((option, index) => (
                   <div
                     key={index}
-                    className="relative group"
-                    onMouseEnter={() => setShowTip(index)}
-                    onMouseLeave={() => setShowTip(null)}
+                    onClick={() => !showFeedback && setSelectedAnswer(index)}
+                    className={`p-4 rounded-lg transition-colors cursor-pointer ${
+                      showFeedback
+                        ? option.isCorrect
+                          ? 'bg-green-100 border-2 border-green-500'
+                          : selectedAnswer === index
+                          ? 'bg-red-100 border-2 border-red-500'
+                          : 'bg-gray-50'
+                        : selectedAnswer === index
+                        ? 'bg-blue-50 border-2 border-blue-500'
+                        : 'bg-gray-50 hover:bg-gray-100'
+                    }`}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl transform group-hover:rotate-1 transition-transform" />
-                    <div className="relative bg-white p-4 rounded-xl shadow-md group-hover:shadow-lg transition-shadow">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-2xl">{tip.icon}</span>
-                        <p className="text-gray-700">{tip.text}</p>
-                      </div>
+                    <div className="flex items-center space-x-3">
+                      <span className="text-lg font-medium text-gray-500">{String.fromCharCode(65 + index)}.</span>
+                      <p className="text-gray-900">{option.text}</p>
                     </div>
                   </div>
                 ))}
               </div>
-              {/* Navigation Buttons */}
-              <div className="flex justify-between pt-4">
+              {!showFeedback && (
                 <button
-                  onClick={() => {
-                    const currentIndex = topics.findIndex(t => t.id === activeTopic.id);
-                    if (currentIndex > 0) {
-                      setActiveTopic(topics[currentIndex - 1]);
-                    }
-                  }}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
-                    topics.findIndex(t => t.id === activeTopic.id) === 0
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-blue-500 text-white shadow-lg hover:bg-blue-600'
-                  }`}
+                  onClick={handleAnswerSubmit}
+                  disabled={selectedAnswer === null}
+                  className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Previous
+                  Check Answer
                 </button>
-                <button
-                  onClick={() => {
-                    const currentIndex = topics.findIndex(t => t.id === activeTopic.id);
-                    if (currentIndex < topics.length - 1) {
-                      setActiveTopic(topics[currentIndex + 1]);
-                    }
-                  }}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
-                    topics.findIndex(t => t.id === activeTopic.id) === topics.length - 1
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-blue-500 text-white shadow-lg hover:bg-blue-600'
-                  }`}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-            <div>
-              {activeTopic.id === 'aperture' ? (
-                <ApertureSimulator />
-              ) : activeTopic.id === 'iso' ? (
-                <IsoSimulator />
-              ) : activeTopic.id === 'shutter' ? (
-                <ShutterSimulator />
-              ) : (
-                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl group">
-                  <Image
-                    src={activeTopic.imagePath}
-                    alt={`${activeTopic.title} example`}
-                    fill
-                    className="object-cover transform group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              )}
+              {showFeedback && (
+                <div className={`p-4 rounded-lg ${
+                  selectedAnswer !== null && activeTopic.mcQuestion.options[selectedAnswer].isCorrect
+                    ? 'bg-green-50 text-green-800'
+                    : 'bg-red-50 text-red-800'
+                }`}>
+                  <p className="text-sm font-medium">
+                    {selectedAnswer !== null && activeTopic.mcQuestion.options[selectedAnswer].isCorrect
+                      ? 'Correct!'
+                      : 'Incorrect. The correct answer is: ' + 
+                        activeTopic.mcQuestion.options.find(opt => opt.isCorrect)?.text}
+                  </p>
                 </div>
               )}
             </div>
@@ -161,17 +355,52 @@ export default function LearnPage() {
         </div>
       </div>
 
+      {/* Navigation Buttons */}
+      <div className="flex justify-between max-w-2xl mx-auto">
+        <button
+          onClick={handlePrevious}
+          disabled={topics.findIndex(t => t.id === activeTopic.id) === 0}
+          className={`px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
+            topics.findIndex(t => t.id === activeTopic.id) === 0
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              : 'bg-blue-500 text-white shadow-lg hover:bg-blue-600'
+          }`}
+        >
+          Previous
+        </button>
+        <button
+          onClick={handleNext}
+          disabled={topics.findIndex(t => t.id === activeTopic.id) === topics.length - 1}
+          className={`px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
+            topics.findIndex(t => t.id === activeTopic.id) === topics.length - 1
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              : 'bg-blue-500 text-white shadow-lg hover:bg-blue-600'
+          }`}
+        >
+          Next
+        </button>
+      </div>
+
       {/* CTA */}
       <div className="text-center">
         <a
-          href="/quiz"
-          className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all group"
+          href={allTopicsVisited ? "/quiz" : "#"}
+          className={`inline-flex items-center px-8 py-4 ${
+            allTopicsVisited 
+              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-xl transform hover:-translate-y-0.5 transition-all group'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          } rounded-xl shadow-lg`}
         >
           Test Your Knowledge
-          <svg className="ml-2 w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
+          {allTopicsVisited && (
+            <svg className="ml-2 w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          )}
         </a>
+        {!allTopicsVisited && (
+          <p className="mt-2 text-sm text-gray-500">Complete all lessons to access the quiz</p>
+        )}
       </div>
     </div>
   );
