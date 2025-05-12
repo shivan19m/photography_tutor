@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import ShutterSimulator from '@/components/ShutterSimulator';
 
 // Sample quiz questions (you'll need to add your own images)
 const quizQuestions = [
@@ -234,7 +235,9 @@ export default function QuizPage() {
           return `${setting}: ${actual} (target: ${expected})`;
         })
         .join(', ');
-      setFeedback(`Not quite right. Your settings: ${incorrectSettings}. ${quizQuestions[currentQuestion].explanation}`);
+      let feedbackMsg = `Not quite right. Your settings: ${incorrectSettings}. ${quizQuestions[currentQuestion].explanation}`;
+      
+      setFeedback(feedbackMsg);
       setIsChecking(false); // Reset checking state after feedback
     } else {
       const incorrect = Object.entries(results)
@@ -443,15 +446,18 @@ export default function QuizPage() {
           <div className="space-y-4 flex flex-col h-full justify-center">
             {/* Your adjustable image */}
             <div className="space-y-2">
-              <div className="relative aspect-video rounded-xl overflow-hidden shadow-lg bg-black">
-                <Image
-                  src={quizQuestions[currentQuestion].baseImage}
-                  alt="Your image"
-                  fill
-                  className="object-cover"
-                  style={getImageEffects(tempSettings)}
+              <div
+                style={{
+                  filter: `brightness(${Math.log2(tempSettings.iso / 100) * 0.5 + 1}) blur(${Math.max(0, (1 / tempSettings.aperture) * 3)}px)`
+                }}
+              >
+                <ShutterSimulator
+                  imageSrc={quizQuestions[currentQuestion].baseImage}
+                  shutterSpeed={tempSettings.shutterSpeed}
+                  onShutterSpeedChange={value => handleSettingsChange('shutterSpeed', value.toString())}
+                  hideHeaderAndSlider={true}
+                  hideAnnotations={true}
                 />
-                {getNoiseOverlay(tempSettings.iso)}
               </div>
               <p className="text-center font-medium text-white">Your Image</p>
             </div>
