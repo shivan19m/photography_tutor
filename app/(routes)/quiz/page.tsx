@@ -312,6 +312,30 @@ export default function QuizPage() {
     setIsChecking(false);
   };
 
+  // --- NEW: Progress calculation ---
+  const totalQuestions = quizQuestions.length + scenarioQuestions.length;
+  const progress = ((currentQuestion + 1) / totalQuestions) * 100;
+
+  // --- NEW: Noise overlay for ISO simulation ---
+  const getNoiseOverlay = (iso: number) => {
+    const minIso = 100;
+    const maxIso = 3200;
+    const noiseAmount = Math.min(1, Math.max(0, (iso - minIso) / (maxIso - minIso)));
+    if (noiseAmount < 0.1) return null;
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          opacity: noiseAmount,
+          mixBlendMode: 'overlay',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+        }}
+      />
+    );
+  };
+
   if (isComplete) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -345,13 +369,20 @@ export default function QuizPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-8 space-y-6">
+      {/* --- Progress Bar --- */}
+      <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden mb-4">
+        <div
+          className="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-white">Photography Quiz</h1>
         <p className="text-white/80">
           {isScenarioQuestion ? 'Test your knowledge with real-world scenarios' : 'Match the image settings'}
         </p>
-        <div className="text-sm text-white/70">
-          Question {currentQuestion + 1} of {quizQuestions.length + scenarioQuestions.length} | Score: {score}
+        <div className="text-lg font-semibold text-white/90">
+          Question {currentQuestion + 1} of {totalQuestions} <span className="mx-2">|</span> <span className="text-blue-200">Score: {score}</span>
         </div>
       </div>
 
@@ -367,14 +398,14 @@ export default function QuizPage() {
                   key={index}
                   onClick={() => setSelectedAnswer(index)}
                   disabled={showFeedback || isChecking}
-                  className={`w-full p-4 text-left rounded-lg transition-all ${
+                  className={`w-full p-4 text-left rounded-lg transition-all border-2 ${
                     selectedAnswer === index
                       ? showFeedback
                         ? option.isCorrect
-                          ? 'bg-green-50 border-2 border-green-500 text-green-900'
-                          : 'bg-red-50 border-2 border-red-500 text-red-900'
-                        : 'bg-blue-50 border-2 border-blue-500 text-blue-900'
-                      : 'bg-gray-50 hover:bg-gray-100 text-gray-900'
+                          ? 'bg-green-50 border-green-500 text-green-900'
+                          : 'bg-red-50 border-red-500 text-red-900'
+                        : 'bg-blue-50 border-blue-500 text-blue-900'
+                      : 'bg-gray-50 border-transparent hover:bg-gray-100 text-gray-900'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
@@ -404,7 +435,7 @@ export default function QuizPage() {
               )}
             </div>
             {showFeedback && (
-              <div className={`p-4 rounded-lg ${
+              <div className={`p-4 rounded-lg w-full ${
                 selectedAnswer !== null && scenarioQuestions[currentScenarioIndex].options[selectedAnswer].isCorrect 
                   ? 'bg-green-50 text-green-800' 
                   : 'bg-red-50 text-red-800'
@@ -415,19 +446,21 @@ export default function QuizPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Left side: Your image and controls */}
           <div className="space-y-4">
             {/* Your adjustable image */}
             <div className="space-y-2">
-              <div className="relative aspect-video rounded-xl overflow-hidden shadow-lg">
+              <div className="relative aspect-video rounded-xl overflow-hidden shadow-lg bg-black">
                 <Image
                   src={quizQuestions[currentQuestion].baseImage}
                   alt="Your image"
                   fill
                   className="object-cover"
-                  style={getImageEffects(settings)}
+                  style={getImageEffects(tempSettings)}
                 />
+                {/* --- Noise overlay for ISO simulation --- */}
+                {getNoiseOverlay(tempSettings.iso)}
               </div>
               <p className="text-center font-medium text-white">Your Image</p>
             </div>
@@ -527,7 +560,7 @@ export default function QuizPage() {
 
           {/* Right side: Target image */}
           <div className="space-y-2">
-            <div className="relative aspect-video rounded-xl overflow-hidden shadow-lg">
+            <div className="relative aspect-video rounded-xl overflow-hidden shadow-lg bg-black">
               <Image
                 src={quizQuestions[currentQuestion].baseImage}
                 alt="Target image"

@@ -137,7 +137,7 @@ export default function LearnPage() {
   const [showTip, setShowTip] = useState<number | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [visitedTopics, setVisitedTopics] = useState<Set<string>>(new Set(['iso']));
+  const [visitedTopics, setVisitedTopics] = useState<Set<string>>(new Set());
 
   const handleAnswerSubmit = () => {
     if (selectedAnswer !== null) {
@@ -150,9 +150,10 @@ export default function LearnPage() {
     if (currentIndex < topics.length - 1) {
       const nextTopic = topics[currentIndex + 1];
       setActiveTopic(nextTopic);
-      setVisitedTopics(prev => new Set([...prev, nextTopic.id]));
+      setVisitedTopics(prev => new Set([...prev, activeTopic.id]));
       setSelectedAnswer(null);
       setShowFeedback(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -162,6 +163,7 @@ export default function LearnPage() {
       setActiveTopic(topics[currentIndex - 1]);
       setSelectedAnswer(null);
       setShowFeedback(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -188,29 +190,41 @@ export default function LearnPage() {
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-center space-x-4">
-        {topics.map((topic, index) => (
-          <button
-            key={topic.id}
-            onClick={() => {
-              if (canAccessTopic(topic.id)) {
-                setActiveTopic(topic);
-                setVisitedTopics(prev => new Set([...prev, topic.id]));
-                setSelectedAnswer(null);
-                setShowFeedback(false);
-              }
-            }}
-            className={`px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
-              activeTopic.id === topic.id
-                ? 'bg-blue-500 text-white shadow-lg'
-                : canAccessTopic(topic.id)
-                ? 'bg-white text-gray-600 hover:bg-gray-50 shadow'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            {topic.title}
-          </button>
-        ))}
+      <div className="flex flex-col items-center space-y-2">
+        <div className="flex justify-center space-x-4 w-full max-w-lg">
+          {topics.map((topic, index) => (
+            <button
+              key={topic.id}
+              onClick={() => {
+                if (canAccessTopic(topic.id)) {
+                  setActiveTopic(topic);
+                  setVisitedTopics(prev => new Set([...prev, topic.id]));
+                  setSelectedAnswer(null);
+                  setShowFeedback(false);
+                }
+              }}
+              className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
+                activeTopic.id === topic.id
+                  ? 'bg-blue-500 text-white shadow-lg'
+                  : canAccessTopic(topic.id)
+                  ? 'bg-white text-gray-600 hover:bg-gray-50 shadow'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+              disabled={!canAccessTopic(topic.id)}
+              style={{ minWidth: 0 }}
+            >
+              {topic.title}
+            </button>
+          ))}
+        </div>
+        {/* Progress bar directly under nav bar */}
+        <div className="relative w-full max-w-lg h-1 mt-1">
+          <div className="absolute top-0 left-0 w-full h-full bg-gray-200 rounded-full" />
+          <div
+            className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500"
+            style={{ width: `${(topics.findIndex(t => t.id === activeTopic.id) / (topics.length - 1)) * 100}%` }}
+          />
+        </div>
       </div>
 
       {/* Content */}
@@ -368,40 +382,46 @@ export default function LearnPage() {
         >
           Previous
         </button>
-        <button
-          onClick={handleNext}
-          disabled={topics.findIndex(t => t.id === activeTopic.id) === topics.length - 1}
-          className={`px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
-            topics.findIndex(t => t.id === activeTopic.id) === topics.length - 1
-              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              : 'bg-blue-500 text-white shadow-lg hover:bg-blue-600'
-          }`}
-        >
-          Next
-        </button>
+        {topics.findIndex(t => t.id === activeTopic.id) === topics.length - 1 ? (
+          <a
+            href="/quiz"
+            className="px-8 py-3 rounded-lg font-bold transition-all transform bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:from-blue-600 hover:to-purple-700 hover:shadow-xl hover:-translate-y-0.5 text-center"
+          >
+            Test Your Knowledge
+          </a>
+        ) : (
+          <button
+            onClick={handleNext}
+            className="px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 bg-blue-500 text-white shadow-lg hover:bg-blue-600"
+          >
+            Next
+          </button>
+        )}
       </div>
 
       {/* CTA */}
-      <div className="text-center">
-        <a
-          href={allTopicsVisited ? "/quiz" : "#"}
-          className={`inline-flex items-center px-8 py-4 ${
-            allTopicsVisited 
-              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-xl transform hover:-translate-y-0.5 transition-all group'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          } rounded-xl shadow-lg`}
-        >
-          Test Your Knowledge
-          {allTopicsVisited && (
-            <svg className="ml-2 w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
+      {topics.findIndex(t => t.id === activeTopic.id) !== topics.length - 1 && (
+        <div className="text-center">
+          <a
+            href={allTopicsVisited ? "/quiz" : "#"}
+            className={`inline-flex items-center px-8 py-4 ${
+              allTopicsVisited 
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-xl transform hover:-translate-y-0.5 transition-all group'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            } rounded-xl shadow-lg`}
+          >
+            Test Your Knowledge
+            {allTopicsVisited && (
+              <svg className="ml-2 w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            )}
+          </a>
+          {!allTopicsVisited && (
+            <p className="mt-2 text-sm text-gray-500">Complete all lessons to access the quiz</p>
           )}
-        </a>
-        {!allTopicsVisited && (
-          <p className="mt-2 text-sm text-gray-500">Complete all lessons to access the quiz</p>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 } 
