@@ -186,6 +186,7 @@ export default function QuizPage() {
         ...prev,
         [setting]: numValue
       }));
+      setIsCorrect(false);
     }
   };
 
@@ -195,12 +196,10 @@ export default function QuizPage() {
 
   const checkAnswer = () => {
     if (isChecking) return; // Prevent multiple clicks
-    
     setIsChecking(true);
     setSettings(tempSettings); // Apply the settings when checking
     const tolerance = 0.35; // 35% tolerance
     const targetSettings = quizQuestions[currentQuestion].targetSettings;
-    
     const isWithinTolerance = (actual: number, expected: number) => {
       // Special handling for aperture values
       if (expected < 2) { // For wide apertures (f/1.4, f/1.8, etc.)
@@ -208,16 +207,13 @@ export default function QuizPage() {
       }
       return Math.abs((actual - expected) / expected) <= tolerance;
     };
-
     const results = {
       iso: isWithinTolerance(tempSettings.iso, targetSettings.iso),
       aperture: isWithinTolerance(tempSettings.aperture, targetSettings.aperture),
       shutterSpeed: isWithinTolerance(tempSettings.shutterSpeed, targetSettings.shutterSpeed),
     };
-
     const allCorrect = Object.values(results).every(Boolean);
     setAttempts(prev => prev + 1);
-
     if (allCorrect) {
       setFeedback('Perfect match! ' + quizQuestions[currentQuestion].explanation);
       setIsCorrect(true);
@@ -238,7 +234,6 @@ export default function QuizPage() {
           return `${setting}: ${actual} (target: ${expected})`;
         })
         .join(', ');
-      
       setFeedback(`Not quite right. Your settings: ${incorrectSettings}. ${quizQuestions[currentQuestion].explanation}`);
       setIsChecking(false); // Reset checking state after feedback
     } else {
@@ -282,7 +277,7 @@ export default function QuizPage() {
       setIsChecking(false);
       setShowFeedback(false);
       setAttempts(0); // Reset attempts for next question
-      setIsCorrect(false); // Reset correct state
+      setIsCorrect(false);
       const defaultSettings = {
         iso: 100,
         aperture: 1.4,
@@ -369,7 +364,7 @@ export default function QuizPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-8 space-y-6">
-      {/* --- Progress Bar --- */}
+      {/* Progress Bar */}
       <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden mb-4">
         <div
           className="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all"
@@ -381,9 +376,6 @@ export default function QuizPage() {
         <p className="text-white/80">
           {isScenarioQuestion ? 'Test your knowledge with real-world scenarios' : 'Match the image settings'}
         </p>
-        <div className="text-lg font-semibold text-white/90">
-          Question {currentQuestion + 1} of {totalQuestions} <span className="mx-2">|</span> <span className="text-blue-200">Score: {score}</span>
-        </div>
       </div>
 
       {isScenarioQuestion ? (
@@ -446,9 +438,9 @@ export default function QuizPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
           {/* Left side: Your image and controls */}
-          <div className="space-y-4">
+          <div className="space-y-4 flex flex-col h-full justify-center">
             {/* Your adjustable image */}
             <div className="space-y-2">
               <div className="relative aspect-video rounded-xl overflow-hidden shadow-lg bg-black">
@@ -459,108 +451,82 @@ export default function QuizPage() {
                   className="object-cover"
                   style={getImageEffects(tempSettings)}
                 />
-                {/* --- Noise overlay for ISO simulation --- */}
                 {getNoiseOverlay(tempSettings.iso)}
               </div>
               <p className="text-center font-medium text-white">Your Image</p>
             </div>
 
-            {/* Settings Controls */}
-            <div className="bg-black/80 backdrop-blur-sm rounded-xl p-4 shadow-lg space-y-3">
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-white">ISO</label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="range"
-                      min={100}
-                      max={3200}
-                      value={tempSettings.iso}
-                      onChange={(e) => handleSettingsChange('iso', e.target.value)}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      step={100}
-                    />
-                    <input
-                      type="number"
-                      value={tempSettings.iso}
-                      onChange={(e) => handleSettingsChange('iso', e.target.value)}
-                      className="w-20 px-2 py-1 bg-gray-700 text-white rounded"
-                      min={100}
-                      max={3200}
-                      step={100}
-                    />
-                  </div>
-                  <div className="flex justify-between text-sm text-white/80">
-                    <span>100</span>
-                    <span>{formatISO(tempSettings.iso)}</span>
-                    <span>3200</span>
-                  </div>
+            {/* Settings Controls - improved UI */}
+            <div className="bg-white rounded-2xl shadow-xl p-6 space-y-6">
+              {/* ISO */}
+              <div className="space-y-1">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /></svg>
+                  ISO
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400">100</span>
+                  <input
+                    type="range"
+                    min={100}
+                    max={3200}
+                    value={tempSettings.iso}
+                    onChange={(e) => handleSettingsChange('iso', e.target.value)}
+                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    step={100}
+                  />
+                  <span className="text-xs text-gray-400">3200</span>
+                  <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold min-w-[40px] text-center">{formatISO(tempSettings.iso)}</span>
                 </div>
-
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-white">Aperture</label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="range"
-                      min={1.4}
-                      max={16}
-                      value={tempSettings.aperture}
-                      onChange={(e) => handleSettingsChange('aperture', e.target.value)}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      step={0.1}
-                    />
-                    <input
-                      type="number"
-                      value={tempSettings.aperture}
-                      onChange={(e) => handleSettingsChange('aperture', e.target.value)}
-                      className="w-20 px-2 py-1 bg-gray-700 text-white rounded"
-                      min={1.4}
-                      max={16}
-                      step={0.1}
-                    />
-                  </div>
-                  <div className="flex justify-between text-sm text-white/80">
-                    <span>f/1.4</span>
-                    <span>{formatAperture(tempSettings.aperture)}</span>
-                    <span>f/16</span>
-                  </div>
+              </div>
+              {/* Aperture */}
+              <div className="space-y-1">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                  <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 2v20M2 12h20" /></svg>
+                  Aperture
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400">f/1.4</span>
+                  <input
+                    type="range"
+                    min={1.4}
+                    max={16}
+                    value={tempSettings.aperture}
+                    onChange={(e) => handleSettingsChange('aperture', e.target.value)}
+                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                    step={0.1}
+                  />
+                  <span className="text-xs text-gray-400">f/16</span>
+                  <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold min-w-[40px] text-center">{formatAperture(tempSettings.aperture)}</span>
                 </div>
-
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-white">Shutter Speed</label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="range"
-                      min={15}
-                      max={4000}
-                      value={tempSettings.shutterSpeed}
-                      onChange={(e) => handleSettingsChange('shutterSpeed', e.target.value)}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      step={15}
-                    />
-                    <input
-                      type="number"
-                      value={tempSettings.shutterSpeed}
-                      onChange={(e) => handleSettingsChange('shutterSpeed', e.target.value)}
-                      className="w-20 px-2 py-1 bg-gray-700 text-white rounded"
-                      min={15}
-                      max={4000}
-                      step={15}
-                    />
-                  </div>
-                  <div className="flex justify-between text-sm text-white/80">
-                    <span>1/15</span>
-                    <span>{formatShutterSpeed(tempSettings.shutterSpeed)}</span>
-                    <span>1/4000</span>
-                  </div>
+              </div>
+              {/* Shutter Speed */}
+              <div className="space-y-1">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                  Shutter Speed
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400">1/15</span>
+                  <input
+                    type="range"
+                    min={15}
+                    max={4000}
+                    value={tempSettings.shutterSpeed}
+                    onChange={(e) => handleSettingsChange('shutterSpeed', e.target.value)}
+                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-500"
+                    step={15}
+                  />
+                  <span className="text-xs text-gray-400">1/4000</span>
+                  <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold min-w-[40px] text-center">{formatShutterSpeed(tempSettings.shutterSpeed)}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right side: Target image */}
-          <div className="space-y-2">
-            <div className="relative aspect-video rounded-xl overflow-hidden shadow-lg bg-black">
+          {/* Right side: Target image and Check Settings button, top-aligned */}
+          <div className="flex flex-col md:h-full">
+            <div className="relative aspect-video rounded-xl overflow-hidden shadow-lg bg-black w-full">
               <Image
                 src={quizQuestions[currentQuestion].baseImage}
                 alt="Target image"
@@ -569,34 +535,28 @@ export default function QuizPage() {
                 style={getImageEffects(quizQuestions[currentQuestion].targetSettings)}
               />
             </div>
-            <p className="text-center font-medium text-white">Target Image</p>
-            <div className="flex flex-col items-center space-y-2 pt-4">
-              {feedback && (
-                <div className={`p-4 rounded-lg w-full ${
-                  isCorrect 
-                    ? 'bg-green-50 text-green-800' 
-                    : attempts >= 1 
-                      ? 'bg-blue-50 text-blue-800'
-                      : 'bg-yellow-50 text-yellow-800'
-                }`}>
-                  <p className="text-sm font-medium">{feedback}</p>
-                </div>
-              )}
-              {attempts < 2 ? (
+            <p className="text-center font-medium text-white mb-6">Target Image</p>
+            <div className="w-full flex flex-col items-center mt-0 md:mt-0" style={{ minHeight: 0 }}>
+              {(!isCorrect && attempts < 2) && (
                 <button
                   onClick={checkAnswer}
-                  disabled={isCorrect}
-                  className="w-full px-8 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  className={`w-full max-w-xs px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:from-blue-600 hover:to-purple-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${feedback && !isCorrect ? 'animate-shake' : ''}`}
                 >
-                  {attempts === 0 ? 'Check Settings' : 'Try Again'}
+                  Check Settings
                 </button>
-              ) : (
+              )}
+              {((!isCorrect && attempts >= 2) || isCorrect) && (
                 <button
                   onClick={nextQuestion}
-                  className="w-full px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  className={`w-full max-w-xs px-8 py-3 bg-gradient-to-r ${isCorrect ? 'from-green-500 to-blue-500' : 'from-gray-400 to-gray-600'} text-white rounded-xl font-bold text-lg shadow-lg hover:from-green-600 hover:to-blue-600 hover:shadow-xl transition-all`}
                 >
                   Continue
                 </button>
+              )}
+              {feedback && (
+                <div className={`mt-4 w-full max-w-xs p-3 rounded-lg font-semibold text-center shadow ${isCorrect ? 'bg-green-100 text-green-700' : (attempts >= 2 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')}`}>
+                  {feedback}
+                </div>
               )}
             </div>
           </div>
