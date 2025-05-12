@@ -244,21 +244,16 @@ export default function LearnPage() {
               {/* Tips and Simulator Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Tips */}
-                <div className="space-y-4 flex flex-col justify-center">
+                <div className="space-y-3 flex flex-col justify-center">
                   {activeTopic.tips.map((tip, index) => (
                     <div
                       key={index}
-                      className="relative group"
-                      onMouseEnter={() => setShowTip(index)}
-                      onMouseLeave={() => setShowTip(null)}
+                      className="flex items-start space-x-3 bg-gray-50 border border-gray-200 rounded-md px-3 py-2"
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl transform group-hover:rotate-1 transition-transform" />
-                      <div className="relative bg-white p-4 rounded-xl shadow-md group-hover:shadow-lg transition-shadow">
-                        <div className="flex items-center justify-center space-x-3">
-                          <span className="text-2xl">{tip.icon}</span>
-                          <p className="text-gray-700 text-center">{tip.text}</p>
-                        </div>
-                      </div>
+                      <span className="text-xl mt-0.5">{tip.icon}</span>
+                      <span className="text-gray-700 text-base">
+                        <strong>{tip.text.split(":")[0]}:</strong>{" "}{tip.text.split(":")[1]}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -270,7 +265,11 @@ export default function LearnPage() {
                   ) : activeTopic.id === 'iso' ? (
                     <IsoSimulator />
                   ) : activeTopic.id === 'shutter' ? (
-                    <ShutterSimulator />
+                    <ShutterSimulator 
+                      imageSrc={activeTopic.imagePath}
+                      shutterSpeed={250}
+                      onShutterSpeedChange={() => {}}
+                    />
                   ) : null}
                 </div>
               </div>
