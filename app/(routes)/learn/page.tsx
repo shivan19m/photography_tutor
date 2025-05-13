@@ -196,10 +196,7 @@ export default function LearnPage() {
       setShowFeedback(true);
     }
   };
-  const quickCheckAnsweredCorrect =
-    step === 'quickcheck' &&
-    selectedAnswer !== null &&
-    activeTopic.mcQuestion.options[selectedAnswer]?.isCorrect;
+  const quickCheckSubmitted = step === 'quickcheck' && showFeedback;
 
   // Render content for current step
   let stepContent = null;
@@ -343,9 +340,9 @@ export default function LearnPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-8 space-y-12">
-      {/* Header */}
-      <div className="relative">
+    <div className="max-w-7xl mx-auto p-8 space-y-8">
+      {/* Header with nav and progress bar */}
+      <div className="relative mb-4">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl transform -rotate-1" />
         <div className="relative bg-white rounded-3xl p-8 md:p-12 shadow-xl text-center">
           <h1 className="text-4xl font-bold text-gray-900">
@@ -357,37 +354,35 @@ export default function LearnPage() {
               : 'Learn how ISO, Aperture, and Shutter Speed work together to create the perfect shot'
             }
           </p>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <div className="flex flex-col items-center space-y-2">
-        <div className="flex justify-center space-x-4 w-full max-w-lg">
-          {topics.map((topic, index) => (
-            <button
-              key={topic.id}
-              onClick={() => handleNavTopic(index)}
-              className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
-                topicIndex === index && step !== 'quickcheck'
-                  ? 'bg-blue-500 text-white shadow-lg'
-                  : canAccessTopic(index)
-                  ? 'bg-white text-gray-600 hover:bg-gray-50 shadow'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
-              disabled={!canAccessTopic(index)}
-              style={{ minWidth: 0 }}
-            >
-              {topic.title}
-            </button>
-          ))}
-        </div>
-        {/* Progress bar */}
-        <div className="relative w-full max-w-lg h-1 mt-1">
-          <div className="absolute top-0 left-0 w-full h-full bg-gray-200 rounded-full" />
-          <div
-            className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
+          {/* Topic nav and progress bar moved here */}
+          <div className="flex flex-col items-center space-y-2 mt-6">
+            <div className="flex justify-center space-x-4 w-full max-w-lg">
+              {topics.map((topic, index) => (
+                <button
+                  key={topic.id}
+                  onClick={() => handleNavTopic(index)}
+                  className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
+                    topicIndex === index && step !== 'quickcheck'
+                      ? 'bg-blue-500 text-white shadow-lg'
+                      : canAccessTopic(index)
+                      ? 'bg-white text-gray-600 hover:bg-gray-50 shadow'
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+                  disabled={!canAccessTopic(index)}
+                  style={{ minWidth: 0 }}
+                >
+                  {topic.title}
+                </button>
+              ))}
+            </div>
+            <div className="relative w-full max-w-lg h-1 mt-1">
+              <div className="absolute top-0 left-0 w-full h-full bg-gray-200 rounded-full" />
+              <div
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -399,8 +394,19 @@ export default function LearnPage() {
         </div>
       </div>
 
-      {/* Navigation Button */}
-      <div className="flex justify-end max-w-2xl mx-auto">
+      {/* Navigation Buttons (now below content) */}
+      <div className="flex justify-between max-w-2xl mx-auto mt-8">
+        <button
+          onClick={() => setStepIndex(Math.max(0, stepIndex - 1))}
+          disabled={stepIndex === 0}
+          className={`px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
+            stepIndex === 0
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              : 'bg-blue-500 text-white shadow-lg hover:bg-blue-600'
+          }`}
+        >
+          Previous
+        </button>
         {isLastStep ? (
           <a
             href="/quiz"
@@ -411,8 +417,8 @@ export default function LearnPage() {
         ) : (
           <button
             onClick={handleNext}
-            disabled={step === 'quickcheck' && !quickCheckAnsweredCorrect}
-            className={`px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 bg-blue-500 text-white shadow-lg hover:bg-blue-600 ${step === 'quickcheck' && !quickCheckAnsweredCorrect ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={step === 'quickcheck' ? !quickCheckSubmitted : false}
+            className={`px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 bg-blue-500 text-white shadow-lg hover:bg-blue-600 ${step === 'quickcheck' && !quickCheckSubmitted ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             Next
           </button>
