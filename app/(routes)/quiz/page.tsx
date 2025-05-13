@@ -371,10 +371,42 @@ export default function QuizPage() {
                 ? 'Perfect score! You\'re a photography master!' 
                 : 'Keep practicing to improve your camera settings knowledge!'}
             </p>
-            <div className="pt-4">
+            <div className="pt-4 space-y-4">
+              <Link
+                href="/playground"
+                className="block w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors shadow-md hover:shadow-lg"
+              >
+                Try the Playground
+              </Link>
+              <button
+                onClick={() => {
+                  setCurrentQuestion(0);
+                  setScore(0);
+                  setIsComplete(false);
+                  setAttempts(0);
+                  setFeedback('');
+                  setIsCorrect(false);
+                  setSelectedAnswer(null);
+                  setIsChecking(false);
+                  setShowFeedback(false);
+                  setSettings({
+                    iso: 100,
+                    aperture: 1.4,
+                    shutterSpeed: 60,
+                  });
+                  setTempSettings({
+                    iso: 100,
+                    aperture: 1.4,
+                    shutterSpeed: 60,
+                  });
+                }}
+                className="block w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-colors shadow-md hover:shadow-lg"
+              >
+                Retake Quiz
+              </button>
               <Link
                 href="/learn"
-                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="block w-full px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-lg hover:from-gray-600 hover:to-gray-700 transition-colors shadow-md hover:shadow-lg"
               >
                 Back to Lessons
               </Link>

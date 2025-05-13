@@ -38,6 +38,12 @@ export default function RootLayout({
                 >
                   Learn
                 </a>
+                <a 
+                  href="/playground" 
+                  className="relative text-white bg-purple-500 hover:bg-purple-600 transition-colors px-4 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
+                >
+                  Playground
+                </a>
               </div>
             </div>
           </div>
