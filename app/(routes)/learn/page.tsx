@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
 import ApertureSimulator from '@/components/ApertureSimulator';
 import IsoSimulator from '@/components/IsoSimulator';
@@ -138,6 +138,7 @@ export default function LearnPage() {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [visitedTopics, setVisitedTopics] = useState<Set<string>>(new Set());
+  const [shutterSpeed, setShutterSpeed] = useState(250);
 
   const handleAnswerSubmit = () => {
     if (selectedAnswer !== null) {
@@ -280,8 +281,8 @@ export default function LearnPage() {
                   ) : activeTopic.id === 'shutter' ? (
                     <ShutterSimulator 
                       imageSrc={activeTopic.imagePath}
-                      shutterSpeed={250}
-                      onShutterSpeedChange={() => {}}
+                      shutterSpeed={shutterSpeed}
+                      onShutterSpeedChange={setShutterSpeed}
                     />
                   ) : null}
                 </div>
