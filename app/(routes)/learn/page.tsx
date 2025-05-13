@@ -34,14 +34,9 @@ const topics = [
     imagePath: '/images/iso-example.jpg',
     examples: [
       {
-        title: 'Low ISO Example',
-        description: 'Notice how the image maintains excellent quality with minimal noise. This is ideal for well-lit scenes.',
-        settings: 'ISO 100, f/8, 1/125s'
-      },
-      {
         title: 'High ISO Example',
-        description: 'The image is brighter but shows more noise/grain. This is a trade-off we make in low-light situations.',
-        settings: 'ISO 3200, f/4, 1/60s'
+        description: 'We need a high ISO to capture enough light from stars in a dark envrionment',
+        settings: 'ISO 3200'
       }
     ],
     mcQuestion: {
@@ -57,9 +52,7 @@ const topics = [
       title: "Starry Night Sky with Milky Way",
       description: "Bright stars with minimal trails, lots of stars visible, night setting.",
       settings: {
-        iso: "3200–6400 – High ISO to capture enough light from stars in a dark environment.",
-        shutterSpeed: "15–25 seconds – Long exposure to gather light, but short enough to avoid significant star trailing.",
-        aperture: "f/2.8 or wider (e.g., f/1.8) – A wide aperture to let in as much light as possible."
+        iso: "3200–6400 – High ISO to capture enough light from stars in a dark environment."
       }
     }
   },
@@ -75,14 +68,9 @@ const topics = [
     imagePath: '/images/aperture-example.jpg',
     examples: [
       {
-        title: 'Wide Aperture Example',
-        description: 'Notice the beautiful background blur (bokeh) effect. The subject is sharp while the background is soft.',
-        settings: 'f/1.8, ISO 100, 1/250s'
-      },
-      {
         title: 'Narrow Aperture Example',
         description: 'Everything from foreground to background is in focus, perfect for landscape photography.',
-        settings: 'f/16, ISO 100, 1/30s'
+        settings: 'f/16'
       }
     ],
     mcQuestion: {
@@ -98,9 +86,7 @@ const topics = [
       title: "Spring Park with Flowers and Trees",
       description: "Everything from the foreground flowers to the background is in sharp focus. It's well-lit, likely shot in daylight.",
       settings: {
-        aperture: "f/11 or higher – A small aperture was used to achieve a deep depth of field so the entire scene is sharp.",
-        shutterSpeed: "1/125s to 1/250s – Fast enough to avoid motion blur in daylight, especially since there's no visible motion.",
-        iso: "100 – Plenty of light, so a low ISO for clean, noise-free image quality."
+        aperture: "f/11 or higher – A small aperture was used to achieve a deep depth of field so the entire scene is sharp."
       }
     }
   },
@@ -109,21 +95,16 @@ const topics = [
     title: 'Shutter Speed',
     description: 'Shutter speed determines how long your camera\'s sensor is exposed to light. Faster speeds freeze motion, while slower speeds can create artistic blur effects.',
     tips: [
-      { text: 'Fast (1/1000+): Sports and action', icon: '🏃‍♂️' },
-      { text: 'Medium (1/125-1/250): General use', icon: '🌳' },
       { text: 'Slow (1/60 or slower): Low light/motion blur', icon: '💫' },
+      { text: 'Medium (1/125-1/250): General use', icon: '🌳' },
+      { text: 'Fast (1/1000+): Sports and action', icon: '🏃‍♂️' }
     ],
     imagePath: '/images/shutter-example.jpg',
     examples: [
       {
-        title: 'Fast Shutter Example',
-        description: 'The water droplets are frozen in mid-air, capturing the exact moment of the splash.',
-        settings: '1/1000s, f/5.6, ISO 400'
-      },
-      {
         title: 'Slow Shutter Example',
         description: 'The water appears silky smooth, creating an artistic long-exposure effect.',
-        settings: '1/4s, f/16, ISO 100'
+        settings: '1/4s'
       }
     ],
     mcQuestion: {
@@ -139,9 +120,7 @@ const topics = [
       title: "Smooth Waterfall Flow",
       description: "The water is silky smooth, a signature of long exposure.",
       settings: {
-        shutterSpeed: "1 to 4 seconds (or longer) – A long shutter speed to blur the motion of water.",
-        aperture: "f/8 to f/16 – Narrow aperture to reduce light for a longer exposure, and ensure more of the scene is in focus.",
-        iso: "100 or 200 – Low ISO to minimize noise during the long exposure and to prevent overexposure."
+        shutterSpeed: "1 to 4 seconds (or longer) – A long shutter speed to blur the motion of water."
       }
     }
   },

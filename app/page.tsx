@@ -5,7 +5,7 @@ export default function Home() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-2xl mx-auto text-center space-y-8 p-8">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
-          Learn the Basic Camera Settings in 10 Minutes
+          Learn the Basics of Photography in 10 Minutes
         </h1>
         <p className="text-xl text-gray-600">
           Master the fundamentals of:
