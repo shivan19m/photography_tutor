@@ -70,8 +70,10 @@ A simple Flask backend is included in `backend/app.py`.
 ## Contributing
 
 _Contributors:_
-- [Your Name Here]
-- [Add more contributors]
+- Shivan Mukherjee
+- Allyce Chung
+- Janie
+- Jalaj Mehta
 
 ---
 

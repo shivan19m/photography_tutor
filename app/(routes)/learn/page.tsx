@@ -5,8 +5,23 @@ import Image from 'next/image';
 import ApertureSimulator from '@/components/ApertureSimulator';
 import IsoSimulator from '@/components/IsoSimulator';
 import ShutterSimulator from '@/components/ShutterSimulator';
+import CompositionSimulator from '@/components/CompositionSimulator';
 
 const topics = [
+  {
+    id: 'composition',
+    title: 'Composition',
+    description: `Composition in photography refers to how visual elements are arranged within a frame. Good composition helps guide the viewer's eye and creates a more engaging and aesthetically pleasing image.`,
+    tips: [
+      { text: "Rule of Thirds: Divide the frame into 9 equal parts: place key subjects along lines or intersections for balance", icon: "🌐" },
+      { text: "Leading Lines: Use natural lines in the scene to guide the viewer's eyes toward the subject.", icon: "🏞️" },
+      { text: "Framing: Use elements in the scene (arches, windows, trees) to 'frame' your subject.", icon: "🖼️" },
+    ],
+    imagePath: '/images/composition1.png',
+    examples: [],
+    mcQuestion: { question: '', options: [] },
+    imageDetails: { title: '', description: '', settings: {} }
+  },
   {
     id: 'iso',
     title: 'ISO',
@@ -133,14 +148,19 @@ const topics = [
 ];
 
 // Step types for each topic
-const STEP_TYPES = ['lesson', 'practical', 'quickcheck'] as const;
-type StepType = typeof STEP_TYPES[number];
+const STEP_TYPES_MAP: Record<string, StepType[]> = {
+  composition: ['lesson'],
+  default: ['lesson', 'practical', 'quickcheck'],
+};
+
+type StepType = 'lesson' | 'practical' | 'quickcheck';
 
 // Helper to get all steps in order
 const getAllSteps = () => {
   const steps: { topicIndex: number; step: StepType }[] = [];
-  topics.forEach((_, i) => {
-    STEP_TYPES.forEach((step) => steps.push({ topicIndex: i, step }));
+  topics.forEach((topic, i) => {
+    const stepTypes = STEP_TYPES_MAP[topic.id] || STEP_TYPES_MAP.default;
+    stepTypes.forEach((step: StepType) => steps.push({ topicIndex: i, step }));
   });
   return steps;
 };
@@ -194,7 +214,7 @@ export default function LearnPage() {
   const handleNavTopic = (targetIndex: number) => {
     if (canAccessTopic(topics[targetIndex].id)) {
       // Go to first step of that topic
-      setStepIndex(targetIndex * STEP_TYPES.length);
+      setStepIndex(targetIndex * STEP_TYPES_MAP.default.length);
       setSelectedAnswer(null);
       setShowFeedback(false);
     }
@@ -241,7 +261,13 @@ export default function LearnPage() {
             })}
           </div>
           <div className="bg-white rounded-xl p-4 shadow-lg">
-            {activeTopic.id === 'aperture' ? (
+            {activeTopic.id === 'composition' ? (
+              <CompositionSimulator 
+                imageSrc={activeTopic.imagePath}
+                stencilSrc={"/images/composition1-lines.jpeg"}
+                alt="Composition Simulator"
+              />
+            ) : activeTopic.id === 'aperture' ? (
               <ApertureSimulator />
             ) : activeTopic.id === 'iso' ? (
               <IsoSimulator />
@@ -365,60 +391,73 @@ export default function LearnPage() {
           <p className="mt-4 text-xl text-gray-600">
             {step === 'quickcheck' 
               ? `Test your knowledge about ${activeTopic.title}`
-              : 'Learn how ISO, Aperture, and Shutter Speed work together to create the perfect shot'
+              : 'Learn how Composition, ISO, Aperture, and Shutter Speed work together to create the perfect shot'
             }
           </p>
           {/* Topic nav and progress bar with overlaid bubbles */}
           <div className="flex flex-col items-center space-y-2 mt-6 relative">
             {/* Topic nav bar */}
-            <div className="flex justify-center space-x-4 w-full max-w-lg relative z-0 mb-2">
+            <div className="flex justify-center space-x-4 w-full max-w-3xl relative z-0 mb-2">
               {topics.map((topic, index) => (
                 <button
                   key={topic.id}
                   onClick={() => handleNavTopic(index)}
-                  className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
-                    topicIndex === index && step !== 'quickcheck'
+                  className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 text-center whitespace-nowrap
+                    ${topicIndex === index && step !== 'quickcheck'
                       ? 'bg-blue-500 text-white shadow-lg'
                       : quizCompleted || canAccessTopic(topic.id)
                       ? 'bg-white text-gray-600 hover:bg-gray-50 shadow'
-                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'} text-base`}
                   disabled={!(quizCompleted || canAccessTopic(topic.id))}
-                  style={{ minWidth: 0 }}
+                  style={{ minWidth: 120, justifyContent: 'center', alignItems: 'center', display: 'flex', lineHeight: 1.1 }}
                 >
-                  {topic.title}
+                  <span className="block w-full leading-tight truncate">{topic.title}</span>
                 </button>
               ))}
             </div>
             {/* Progress bar with overlayed bubbles */}
-            <div className="relative w-full max-w-lg h-8 mb-2 flex items-center">
+            <div className="relative w-full max-w-3xl h-12 mb-2 flex flex-col items-center">
               {/* Progress bar */}
-              <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 rounded-full -translate-y-1/2" />
+              <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 rounded-full -translate-y-1/2 z-0" />
               <div
-                className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500 -translate-y-1/2"
+                className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500 -translate-y-1/2 z-0"
                 style={{ width: `${progress}%` }}
               />
-              {/* Overlayed bubbles */}
-              {allSteps.map((s, idx) => {
-                // Evenly space bubbles along the bar
-                const left = (idx / (allSteps.length - 1)) * 100;
-                const isActive = stepIndex === idx;
-                const isCompleted = completedSteps.has(idx) || quizCompleted;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => (quizCompleted || allStepsCompleted) ? setStepIndex(idx) : null}
-                    disabled={!(quizCompleted || allStepsCompleted)}
-                    className={`absolute top-1/2 -translate-y-1/2 w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all
-                      ${isActive ? 'bg-blue-500 text-white border-blue-700 scale-110 shadow-lg' : isCompleted ? 'bg-blue-200 text-blue-700 border-blue-400' : 'bg-gray-200 text-gray-400 border-gray-300'}
-                      ${(quizCompleted || allStepsCompleted) ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-                    style={{ left: `calc(${left}% - 14px)` }}
-                    title={`${topics[s.topicIndex].title} - ${s.step.charAt(0).toUpperCase() + s.step.slice(1)}`}
-                  >
-                    {(idx % 3) + 1}
-                  </button>
-                );
-              })}
+              {/* Overlayed bubbles grouped by topic */}
+              <div className="relative w-full flex justify-between z-10" style={{ pointerEvents: 'none' }}>
+                {topics.map((topic, topicIdx) => {
+                  const stepTypes = STEP_TYPES_MAP[topic.id] || STEP_TYPES_MAP.default;
+                  // Find the first bubble's global index for this topic
+                  const firstStepIdx = allSteps.findIndex(s => s.topicIndex === topicIdx);
+                  // Center the group under the topic button
+                  return (
+                    <div key={topic.id} className="flex flex-col items-center flex-1" style={{ minWidth: 0 }}>
+                      <div style={{ height: 0, marginBottom: 8 }} /> {/* Spacer to align with bar */}
+                      <div className="flex space-x-2 justify-center" style={{ pointerEvents: 'auto' }}>
+                        {stepTypes.map((step, i) => {
+                          const globalIdx = firstStepIdx + i;
+                          const isActive = stepIndex === globalIdx;
+                          const isCompleted = completedSteps.has(globalIdx) || quizCompleted;
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => (quizCompleted || allStepsCompleted) ? setStepIndex(globalIdx) : null}
+                              disabled={!(quizCompleted || allStepsCompleted)}
+                              className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all
+                                ${isActive ? 'bg-blue-500 text-white border-blue-700 scale-110 shadow-lg' : isCompleted ? 'bg-blue-200 text-blue-700 border-blue-400' : 'bg-gray-200 text-gray-400 border-gray-300'}
+                                ${(quizCompleted || allStepsCompleted) ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                              title={`${topic.title} - ${step.charAt(0).toUpperCase() + step.slice(1)}`}
+                              style={{ marginLeft: i > 0 ? 8 : 0, marginRight: i < stepTypes.length - 1 ? 8 : 0 }}
+                            >
+                              {i + 1}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
