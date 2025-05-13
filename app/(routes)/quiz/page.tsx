@@ -135,6 +135,28 @@ const scenarioQuestions = [
       { text: "2 seconds", isCorrect: false }
     ],
     explanation: "A fast shutter speed like 1/1000s is needed to freeze fast-moving action in sports photography."
+  },
+  {
+    id: 7,
+    question: "Which of the following best describes the Rule of Thirds in photography?",
+    options: [
+      { text: "Centering the subject for maximum focus", isCorrect: false },
+      { text: "Placing the subject at the intersection of dividing lines that split the image into thirds", isCorrect: true },
+      { text: "Using three colors in the composition", isCorrect: false },
+      { text: "Capturing three subjects in the frame", isCorrect: false }
+    ],
+    explanation: "The Rule of Thirds is a fundamental composition technique where you divide the frame into a 3x3 grid and place important elements along the lines or at their intersections."
+  },
+  {
+    id: 8,
+    question: "What is leading lines composition in photography used for?",
+    options: [
+      { text: "To blur the background", isCorrect: false },
+      { text: "To divide the image into equal parts", isCorrect: false },
+      { text: "To guide the viewer's eye toward the subject", isCorrect: true },
+      { text: "To balance color in the frame", isCorrect: false }
+    ],
+    explanation: "Leading lines are natural or artificial lines in an image that draw the viewer's attention toward the main subject, creating a more dynamic and engaging composition."
   }
 ];
 
