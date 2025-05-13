@@ -94,9 +94,9 @@ const topics = [
     title: 'Shutter Speed',
     description: 'Shutter speed determines how long your camera\'s sensor is exposed to light. Faster speeds freeze motion, while slower speeds can create artistic blur effects.',
     tips: [
-      { text: 'Slow (1/60 or slower): Low light/motion blur', icon: '💫' },
-      { text: 'Medium (1/125-1/250): General use', icon: '🌳' },
       { text: 'Fast (1/1000+): Sports and action', icon: '🏃‍♂️' },
+      { text: 'Medium (1/125-1/250): General use', icon: '🌳' },
+      { text: 'Slow (1/60 or slower): Low light/motion blur', icon: '💫' },
     ],
     imagePath: '/images/shutter-example.jpg',
     examples: [
@@ -132,50 +132,215 @@ const topics = [
   },
 ];
 
+// Step types for each topic
+const STEP_TYPES = ['lesson', 'practical', 'quickcheck'] as const;
+type StepType = typeof STEP_TYPES[number];
+
+// Helper to get all steps in order
+const getAllSteps = () => {
+  const steps: { topicIndex: number; step: StepType }[] = [];
+  topics.forEach((_, i) => {
+    STEP_TYPES.forEach((step) => steps.push({ topicIndex: i, step }));
+  });
+  return steps;
+};
+const allSteps = getAllSteps();
+
 export default function LearnPage() {
-  const [activeTopic, setActiveTopic] = useState(topics[0]);
-  const [showTip, setShowTip] = useState<number | null>(null);
+  // Track current step index (across all topics/steps)
+  const [stepIndex, setStepIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [visitedTopics, setVisitedTopics] = useState<Set<string>>(new Set());
   const [shutterSpeed, setShutterSpeed] = useState(250);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
 
+  // Derived state
+  const { topicIndex, step } = allSteps[stepIndex];
+  const activeTopic = topics[topicIndex];
+  const isLastStep = stepIndex === allSteps.length - 1;
+
+  // Top nav: only allow nav to topic if all previous steps are completed
+  const canAccessTopic = (targetIndex: number) => {
+    if (targetIndex === 0) return true;
+    // All steps for previous topic must be completed
+    const prevSteps = allSteps.filter(s => s.topicIndex < targetIndex).map((_, i) => i);
+    return prevSteps.every(idx => completedSteps.has(idx));
+  };
+
+  // Progress bar: percent complete
+  const progress = (stepIndex / (allSteps.length - 1)) * 100;
+
+  // Navigation
+  const handleNext = () => {
+    // Mark this step as completed
+    setCompletedSteps(prev => new Set(prev).add(stepIndex));
+    setSelectedAnswer(null);
+    setShowFeedback(false);
+    if (!isLastStep) {
+      setStepIndex(stepIndex + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+  const handleNavTopic = (targetIndex: number) => {
+    if (canAccessTopic(targetIndex)) {
+      // Go to first step of that topic
+      setStepIndex(targetIndex * STEP_TYPES.length);
+      setSelectedAnswer(null);
+      setShowFeedback(false);
+    }
+  };
+
+  // Quick check logic
   const handleAnswerSubmit = () => {
     if (selectedAnswer !== null) {
       setShowFeedback(true);
     }
   };
+  const quickCheckAnsweredCorrect =
+    step === 'quickcheck' &&
+    selectedAnswer !== null &&
+    activeTopic.mcQuestion.options[selectedAnswer]?.isCorrect;
 
-  const handleNext = () => {
-    const currentIndex = topics.findIndex(t => t.id === activeTopic.id);
-    if (currentIndex < topics.length - 1) {
-      const nextTopic = topics[currentIndex + 1];
-      setActiveTopic(nextTopic);
-      setVisitedTopics(prev => new Set([...prev, activeTopic.id]));
-      setSelectedAnswer(null);
-      setShowFeedback(false);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  const handlePrevious = () => {
-    const currentIndex = topics.findIndex(t => t.id === activeTopic.id);
-    if (currentIndex > 0) {
-      setActiveTopic(topics[currentIndex - 1]);
-      setSelectedAnswer(null);
-      setShowFeedback(false);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  const canAccessTopic = (topicId: string) => {
-    const topicIndex = topics.findIndex(t => t.id === topicId);
-    if (topicIndex === 0) return true; // ISO is always accessible
-    const previousTopic = topics[topicIndex - 1];
-    return visitedTopics.has(previousTopic.id);
-  };
-
-  const allTopicsVisited = visitedTopics.size === topics.length;
+  // Render content for current step
+  let stepContent = null;
+  if (step === 'lesson') {
+    stepContent = (
+      <div className="space-y-8">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">{activeTopic.title}</h2>
+          <p className="text-gray-600 text-lg leading-relaxed">{activeTopic.description}</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-4 flex flex-col justify-center w-full">
+            {activeTopic.tips.map((tip, index) => {
+              const match = tip.text.match(/^(.*?) \((.*?)\): (.*)$/);
+              const phrase = match ? match[1] : tip.text;
+              const range = match ? match[2] : '';
+              const description = match ? match[3] : '';
+              return (
+                <div key={index} className="flex items-start w-full bg-gray-50 border border-gray-200 rounded-lg px-6 py-4 min-h-[72px]">
+                  <span className="text-2xl mt-1 mr-4">{tip.icon}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-1">
+                      <span className="font-semibold text-lg text-gray-900">{phrase}</span>
+                      {range && (
+                        <span className="inline-block bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full tracking-wide">{range}</span>
+                      )}
+                    </div>
+                    <div className="text-gray-600 text-base leading-snug">{description}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-lg">
+            {activeTopic.id === 'aperture' ? (
+              <ApertureSimulator />
+            ) : activeTopic.id === 'iso' ? (
+              <IsoSimulator />
+            ) : activeTopic.id === 'shutter' ? (
+              <ShutterSimulator 
+                imageSrc={activeTopic.imagePath}
+                shutterSpeed={shutterSpeed}
+                onShutterSpeedChange={setShutterSpeed}
+                hideHeaderAndSlider={false}
+                hideAnnotations={false}
+              />
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
+  } else if (step === 'practical') {
+    stepContent = (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+        <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl group">
+          <Image
+            src={activeTopic.imagePath}
+            alt={`${activeTopic.title} example`}
+            fill
+            className="object-cover transform group-hover:scale-105 transition-transform duration-500"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute bottom-0 left-0 right-0 p-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <h4 className="text-xl font-semibold mb-3">{activeTopic.imageDetails.title}</h4>
+            <p className="text-base mb-4 opacity-90">{activeTopic.imageDetails.description}</p>
+            <div className="space-y-2 text-sm">
+              {Object.entries(activeTopic.imageDetails.settings).map(([key, value]) => (
+                <p key={key} className="font-mono bg-black/30 p-2 rounded">
+                  <span className="font-semibold">{key.charAt(0).toUpperCase() + key.slice(1)}:</span> {value}
+                </p>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="space-y-6">
+          <h3 className="text-2xl font-semibold text-gray-900">Practical Examples</h3>
+          {activeTopic.examples.map((example, index) => (
+            <div key={index} className="bg-gray-50 rounded-xl p-6 space-y-3">
+              <h4 className="font-medium text-gray-900 text-lg">{example.title}</h4>
+              <p className="text-gray-600">{example.description}</p>
+              <p className="text-sm text-gray-500 font-mono bg-gray-100 p-2 rounded">{example.settings}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  } else if (step === 'quickcheck') {
+    stepContent = (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <h3 className="text-2xl font-semibold text-gray-900 text-center">Quick Check</h3>
+        <p className="text-gray-700 text-lg text-center">{activeTopic.mcQuestion.question}</p>
+        <div className="space-y-4">
+          {activeTopic.mcQuestion.options.map((option, index) => (
+            <div
+              key={index}
+              onClick={() => !showFeedback && setSelectedAnswer(index)}
+              className={`p-4 rounded-lg transition-colors cursor-pointer ${
+                showFeedback
+                  ? option.isCorrect
+                    ? 'bg-green-100 border-2 border-green-500'
+                    : selectedAnswer === index
+                    ? 'bg-red-100 border-2 border-red-500'
+                    : 'bg-gray-50'
+                  : selectedAnswer === index
+                  ? 'bg-blue-50 border-2 border-blue-500'
+                  : 'bg-gray-50 hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <span className="text-lg font-medium text-gray-500">{String.fromCharCode(65 + index)}.</span>
+                <p className="text-gray-900">{option.text}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {!showFeedback && (
+          <button
+            onClick={handleAnswerSubmit}
+            disabled={selectedAnswer === null}
+            className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Check Answer
+          </button>
+        )}
+        {showFeedback && (
+          <div className={`p-4 rounded-lg ${
+            selectedAnswer !== null && activeTopic.mcQuestion.options[selectedAnswer].isCorrect
+              ? 'bg-green-50 text-green-800'
+              : 'bg-red-50 text-red-800'
+          }`}>
+            <p className="text-sm font-medium">
+              {selectedAnswer !== null && activeTopic.mcQuestion.options[selectedAnswer].isCorrect
+                ? 'Correct!'
+                : 'Incorrect. The correct answer is: ' + 
+                  activeTopic.mcQuestion.options.find(opt => opt.isCorrect)?.text}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto p-8 space-y-12">
@@ -183,9 +348,14 @@ export default function LearnPage() {
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl transform -rotate-1" />
         <div className="relative bg-white rounded-3xl p-8 md:p-12 shadow-xl text-center">
-          <h1 className="text-4xl font-bold text-gray-900">Understanding Camera Settings</h1>
+          <h1 className="text-4xl font-bold text-gray-900">
+            {step === 'quickcheck' ? 'Quick Check' : 'Understanding Camera Settings'}
+          </h1>
           <p className="mt-4 text-xl text-gray-600">
-            Learn how ISO, Aperture, and Shutter Speed work together to create the perfect shot
+            {step === 'quickcheck' 
+              ? `Test your knowledge about ${activeTopic.title}`
+              : 'Learn how ISO, Aperture, and Shutter Speed work together to create the perfect shot'
+            }
           </p>
         </div>
       </div>
@@ -196,34 +366,27 @@ export default function LearnPage() {
           {topics.map((topic, index) => (
             <button
               key={topic.id}
-              onClick={() => {
-                if (canAccessTopic(topic.id)) {
-                  setActiveTopic(topic);
-                  setVisitedTopics(prev => new Set([...prev, topic.id]));
-                  setSelectedAnswer(null);
-                  setShowFeedback(false);
-                }
-              }}
+              onClick={() => handleNavTopic(index)}
               className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
-                activeTopic.id === topic.id
+                topicIndex === index && step !== 'quickcheck'
                   ? 'bg-blue-500 text-white shadow-lg'
-                  : canAccessTopic(topic.id)
+                  : canAccessTopic(index)
                   ? 'bg-white text-gray-600 hover:bg-gray-50 shadow'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
-              disabled={!canAccessTopic(topic.id)}
+              disabled={!canAccessTopic(index)}
               style={{ minWidth: 0 }}
             >
               {topic.title}
             </button>
           ))}
         </div>
-        {/* Progress bar directly under nav bar */}
+        {/* Progress bar */}
         <div className="relative w-full max-w-lg h-1 mt-1">
           <div className="absolute top-0 left-0 w-full h-full bg-gray-200 rounded-full" />
           <div
             className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500"
-            style={{ width: `${(topics.findIndex(t => t.id === activeTopic.id) / (topics.length - 1)) * 100}%` }}
+            style={{ width: `${progress}%` }}
           />
         </div>
       </div>
@@ -232,170 +395,13 @@ export default function LearnPage() {
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl transform rotate-1 opacity-10" />
         <div className="relative bg-white rounded-3xl p-8 shadow-xl">
-          <div className="space-y-12">
-            {/* Main Content */}
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-4">{activeTopic.title}</h2>
-                <p className="text-gray-600 text-lg leading-relaxed">
-                  {activeTopic.description}
-                </p>
-              </div>
-
-              {/* Tips and Simulator Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Tips */}
-                <div className="space-y-4 flex flex-col justify-center w-full">
-                  {activeTopic.tips.map((tip, index) => {
-                    // Parse tip text: 'Phrase (Range): Description'
-                    const match = tip.text.match(/^(.*?) \((.*?)\): (.*)$/);
-                    const phrase = match ? match[1] : tip.text;
-                    const range = match ? match[2] : '';
-                    const description = match ? match[3] : '';
-                    return (
-                      <div
-                        key={index}
-                        className="flex items-start w-full bg-gray-50 border border-gray-200 rounded-lg px-6 py-4 min-h-[72px]"
-                      >
-                        <span className="text-2xl mt-1 mr-4">{tip.icon}</span>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-1">
-                            <span className="font-semibold text-lg text-gray-900">{phrase}</span>
-                            {range && (
-                              <span className="inline-block bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full tracking-wide">{range}</span>
-                            )}
-                          </div>
-                          <div className="text-gray-600 text-base leading-snug">{description}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Simulator */}
-                <div className="bg-white rounded-xl p-4 shadow-lg">
-                  {activeTopic.id === 'aperture' ? (
-                    <ApertureSimulator />
-                  ) : activeTopic.id === 'iso' ? (
-                    <IsoSimulator />
-                  ) : activeTopic.id === 'shutter' ? (
-                    <ShutterSimulator 
-                      imageSrc={activeTopic.imagePath}
-                      shutterSpeed={shutterSpeed}
-                      onShutterSpeedChange={setShutterSpeed}
-                    />
-                  ) : null}
-                </div>
-              </div>
-            </div>
-
-            {/* Examples and Image Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-20">
-              {/* Example Image */}
-              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl group">
-                <Image
-                  src={activeTopic.imagePath}
-                  alt={`${activeTopic.title} example`}
-                  fill
-                  className="object-cover transform group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="absolute bottom-0 left-0 right-0 p-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <h4 className="text-xl font-semibold mb-3">{activeTopic.imageDetails.title}</h4>
-                  <p className="text-base mb-4 opacity-90">{activeTopic.imageDetails.description}</p>
-                  <div className="space-y-2 text-sm">
-                    {Object.entries(activeTopic.imageDetails.settings).map(([key, value]) => (
-                      <p key={key} className="font-mono bg-black/30 p-2 rounded">
-                        <span className="font-semibold">{key.charAt(0).toUpperCase() + key.slice(1)}:</span> {value}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Examples Section */}
-              <div className="space-y-6">
-                <h3 className="text-2xl font-semibold text-gray-900">Practical Examples</h3>
-                {activeTopic.examples.map((example, index) => (
-                  <div key={index} className="bg-gray-50 rounded-xl p-6 space-y-3">
-                    <h4 className="font-medium text-gray-900 text-lg">{example.title}</h4>
-                    <p className="text-gray-600">{example.description}</p>
-                    <p className="text-sm text-gray-500 font-mono bg-gray-100 p-2 rounded">{example.settings}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* MC Question */}
-            <div className="max-w-2xl mx-auto mt-16 bg-white rounded-xl p-8 shadow-lg space-y-6">
-              <h3 className="text-2xl font-semibold text-gray-900 text-center">Quick Check</h3>
-              <p className="text-gray-700 text-lg text-center">{activeTopic.mcQuestion.question}</p>
-              <div className="space-y-4">
-                {activeTopic.mcQuestion.options.map((option, index) => (
-                  <div
-                    key={index}
-                    onClick={() => !showFeedback && setSelectedAnswer(index)}
-                    className={`p-4 rounded-lg transition-colors cursor-pointer ${
-                      showFeedback
-                        ? option.isCorrect
-                          ? 'bg-green-100 border-2 border-green-500'
-                          : selectedAnswer === index
-                          ? 'bg-red-100 border-2 border-red-500'
-                          : 'bg-gray-50'
-                        : selectedAnswer === index
-                        ? 'bg-blue-50 border-2 border-blue-500'
-                        : 'bg-gray-50 hover:bg-gray-100'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <span className="text-lg font-medium text-gray-500">{String.fromCharCode(65 + index)}.</span>
-                      <p className="text-gray-900">{option.text}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {!showFeedback && (
-                <button
-                  onClick={handleAnswerSubmit}
-                  disabled={selectedAnswer === null}
-                  className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Check Answer
-                </button>
-              )}
-              {showFeedback && (
-                <div className={`p-4 rounded-lg ${
-                  selectedAnswer !== null && activeTopic.mcQuestion.options[selectedAnswer].isCorrect
-                    ? 'bg-green-50 text-green-800'
-                    : 'bg-red-50 text-red-800'
-                }`}>
-                  <p className="text-sm font-medium">
-                    {selectedAnswer !== null && activeTopic.mcQuestion.options[selectedAnswer].isCorrect
-                      ? 'Correct!'
-                      : 'Incorrect. The correct answer is: ' + 
-                        activeTopic.mcQuestion.options.find(opt => opt.isCorrect)?.text}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+          {stepContent}
         </div>
       </div>
 
-      {/* Navigation Buttons */}
-      <div className="flex justify-between max-w-2xl mx-auto">
-        <button
-          onClick={handlePrevious}
-          disabled={topics.findIndex(t => t.id === activeTopic.id) === 0}
-          className={`px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
-            topics.findIndex(t => t.id === activeTopic.id) === 0
-              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              : 'bg-blue-500 text-white shadow-lg hover:bg-blue-600'
-          }`}
-        >
-          Previous
-        </button>
-        {topics.findIndex(t => t.id === activeTopic.id) === topics.length - 1 ? (
+      {/* Navigation Button */}
+      <div className="flex justify-end max-w-2xl mx-auto">
+        {isLastStep ? (
           <a
             href="/quiz"
             className="px-8 py-3 rounded-lg font-bold transition-all transform bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:from-blue-600 hover:to-purple-700 hover:shadow-xl hover:-translate-y-0.5 text-center"
@@ -405,36 +411,13 @@ export default function LearnPage() {
         ) : (
           <button
             onClick={handleNext}
-            className="px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 bg-blue-500 text-white shadow-lg hover:bg-blue-600"
+            disabled={step === 'quickcheck' && !quickCheckAnsweredCorrect}
+            className={`px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 bg-blue-500 text-white shadow-lg hover:bg-blue-600 ${step === 'quickcheck' && !quickCheckAnsweredCorrect ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             Next
           </button>
         )}
       </div>
-
-      {/* CTA */}
-      {topics.findIndex(t => t.id === activeTopic.id) !== topics.length - 1 && (
-        <div className="text-center">
-          <a
-            href={allTopicsVisited ? "/quiz" : "#"}
-            className={`inline-flex items-center px-8 py-4 ${
-              allTopicsVisited 
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-xl transform hover:-translate-y-0.5 transition-all group'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            } rounded-xl shadow-lg`}
-          >
-            Test Your Knowledge
-            {allTopicsVisited && (
-              <svg className="ml-2 w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            )}
-          </a>
-          {!allTopicsVisited && (
-            <p className="mt-2 text-sm text-gray-500">Complete all lessons to access the quiz</p>
-          )}
-        </div>
-      )}
     </div>
   );
 } 

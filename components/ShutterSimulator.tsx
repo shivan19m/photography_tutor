@@ -22,14 +22,30 @@ const ShutterSimulator: React.FC<ShutterSimulatorProps> = ({ className = '', ima
     });
   };
 
-  // Calculate motion blur based on shutter speed
+  // Calculate motion blur based on shutter speed (logarithmic, realistic)
   const getBlurAmount = (speed: number) => {
-    // Convert shutter speed to blur (faster = less blur)
+    // Logarithmic mapping: slower shutter = more blur
     const minSpeed = 2;
     const maxSpeed = 4000;
-    const maxBlur = 8; // maximum blur in pixels
-    
-    return maxBlur * (1 - ((speed - minSpeed) / (maxSpeed - minSpeed)));
+    const minBlur = 0.8; // Increased base blur for higher speeds
+    const maxBlur = 8; // px
+    // Invert and log scale: slower = more blur
+    // Use a more gradual logarithmic curve
+    const normalized = Math.log10(maxSpeed / speed) / Math.log10(maxSpeed / minSpeed);
+    // Add a small constant to ensure some blur at all speeds
+    return minBlur + (maxBlur - minBlur) * Math.pow(normalized, 0.7); // Power of 0.7 makes the curve more gradual
+  };
+
+  // Calculate opacity for blur overlay (logarithmic, gradual)
+  const getBlurOpacity = (speed: number) => {
+    const minSpeed = 2;
+    const maxSpeed = 4000;
+    const minOpacity = 0.15; // Increased base opacity for higher speeds
+    const maxOpacity = 0.5;
+    // Use a more gradual logarithmic curve
+    const normalized = Math.log10(maxSpeed / speed) / Math.log10(maxSpeed / minSpeed);
+    // Add a small constant to ensure some opacity at all speeds
+    return minOpacity + (maxOpacity - minOpacity) * Math.pow(normalized, 0.7); // Power of 0.7 makes the curve more gradual
   };
 
   const handleShutterChange = (value: number) => {
@@ -64,9 +80,8 @@ const ShutterSimulator: React.FC<ShutterSimulatorProps> = ({ className = '', ima
             backgroundImage: `url(${imageSrc})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            filter: `blur(${getBlurAmount(shutterSpeed)}px)`,
-            opacity: shutterSpeed < 250 ? 0.5 : 0,
-            transform: `translateX(${shutterSpeed < 250 ? '10px' : '0'})`,
+            filter: `blur(${getBlurAmount(shutterSpeed)}px)` ,
+            opacity: getBlurOpacity(shutterSpeed),
           }}
         />
         
