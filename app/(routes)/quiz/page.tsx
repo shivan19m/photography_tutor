@@ -159,6 +159,7 @@ export default function QuizPage() {
   const [isChecking, setIsChecking] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showSettings, setShowSettings] = useState(true);
+  const [userAnswers, setUserAnswers] = useState<any[]>([]);
 
   const formatAperture = (value: number) => `f/${value.toFixed(1)}`;
   const formatShutterSpeed = (value: number) => `1/${value}`;
@@ -270,6 +271,21 @@ export default function QuizPage() {
       setFeedback(`Try adjusting your ${incorrect}. One more attempt!`);
       setIsChecking(false);
     }
+
+    // Track user answers for summary
+    const userAnswer = {
+      question: quizQuestions[currentQuestion].explanation,
+      userAnswer: `ISO: ${formatISO(tempSettings.iso)}, Aperture: ${formatAperture(tempSettings.aperture)}, Shutter Speed: ${formatShutterSpeed(tempSettings.shutterSpeed)}`,
+      correctAnswer: `ISO: ${formatISO(targetSettings.iso)}, Aperture: ${formatAperture(targetSettings.aperture)}, Shutter Speed: ${formatShutterSpeed(targetSettings.shutterSpeed)}`,
+      explanation: quizQuestions[currentQuestion].explanation,
+      correct: isCorrect,
+      options: [
+        `ISO: ${formatISO(tempSettings.iso)}`,
+        `Aperture: ${formatAperture(tempSettings.aperture)}`,
+        `Shutter Speed: ${formatShutterSpeed(tempSettings.shutterSpeed)}`,
+      ]
+    };
+    setUserAnswers(prev => [...prev, userAnswer]);
   };
 
   const handleScenarioAnswer = (questionIndex: number, optionIndex: number) => {
@@ -279,18 +295,29 @@ export default function QuizPage() {
     setSelectedAnswer(optionIndex);
     const question = scenarioQuestions[questionIndex];
     const isCorrect = question.options[optionIndex].isCorrect;
+    const correctOption = question.options.findIndex(opt => opt.isCorrect);
     
     if (isCorrect) {
       setScore(prev => prev + 1);
       setFeedback('Correct! ' + question.explanation);
       setIsCorrect(true);
     } else {
-      const correctOption = question.options.findIndex(opt => opt.isCorrect);
       setFeedback(`Incorrect. The correct answer is: ${question.options[correctOption].text}. ${question.explanation}`);
       setIsCorrect(false);
     }
     setShowFeedback(true);
     setIsChecking(false);
+
+    // Track user answers for summary
+    const userAnswer = {
+      question: question.question,
+      userAnswer: question.options[optionIndex].text,
+      correctAnswer: question.options[correctOption].text,
+      explanation: question.explanation,
+      correct: isCorrect,
+      options: question.options.map(opt => opt.text)
+    };
+    setUserAnswers(prev => [...prev, userAnswer]);
   };
 
   const handleContinue = () => {
@@ -361,6 +388,7 @@ export default function QuizPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg text-center">
+          {/* Summary at the top */}
           <h2 className="text-3xl font-bold text-gray-900">Quiz Complete!</h2>
           <div className="space-y-4">
             <p className="text-xl text-gray-600">
@@ -399,6 +427,7 @@ export default function QuizPage() {
                     aperture: 1.4,
                     shutterSpeed: 60,
                   });
+                  setUserAnswers([]);
                 }}
                 className="block w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-colors shadow-md hover:shadow-lg"
               >
@@ -410,6 +439,46 @@ export default function QuizPage() {
               >
                 Back to Lessons
               </Link>
+            </div>
+          </div>
+          {/* Per-question results below summary */}
+          <div className="mt-8 text-left">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Your Answers</h3>
+            <div className="space-y-4">
+              {(() => {
+                // Only show the last answer for each question
+                const seen = new Map();
+                userAnswers.forEach(ans => {
+                  if (!seen.has(ans.question)) {
+                    seen.set(ans.question, ans);
+                  } else {
+                    seen.set(ans.question, ans); // always keep the latest
+                  }
+                });
+                return Array.from(seen.values()).map((ans, idx) => (
+                  <div key={idx} className={`p-4 rounded-lg border ${ans.correct ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}> 
+                    <div className="font-semibold text-gray-800 mb-1">Q{idx + 1}: {ans.question}</div>
+                    {/* Show all options if available */}
+                    {ans.options && (
+                      <ul className="mb-2 space-y-1">
+                        {ans.options.map((opt: string, i: number) => (
+                          <li key={i} className={`px-2 py-1 rounded text-sm font-mono
+                            ${ans.userAnswer === opt && ans.correctAnswer === opt ? 'bg-green-200 text-green-900 font-bold' :
+                              ans.userAnswer === opt ? 'bg-blue-100 text-blue-900 font-bold' :
+                              ans.correctAnswer === opt ? 'bg-green-100 text-green-800 font-semibold' :
+                              'bg-gray-100 text-gray-700'}
+                          `}>
+                            {opt}
+                            {ans.userAnswer === opt && ' (your answer)'}
+                            {ans.correctAnswer === opt && ' (correct)'}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="text-xs text-gray-500 mt-1">{ans.explanation}</div>
+                  </div>
+                ));
+              })()}
             </div>
           </div>
         </div>

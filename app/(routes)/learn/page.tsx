@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import ApertureSimulator from '@/components/ApertureSimulator';
 import IsoSimulator from '@/components/IsoSimulator';
@@ -159,13 +159,23 @@ export default function LearnPage() {
   const activeTopic = topics[topicIndex];
   const isLastStep = stepIndex === allSteps.length - 1;
 
-  // Top nav: only allow nav to topic if all previous steps are completed
-  const canAccessTopic = (targetIndex: number) => {
-    if (targetIndex === 0) return true;
-    // All steps for previous topic must be completed
-    const prevSteps = allSteps.filter(s => s.topicIndex < targetIndex).map((_, i) => i);
-    return prevSteps.every(idx => completedSteps.has(idx));
+  // Check if quiz is completed (from localStorage)
+  const [quizCompleted, setQuizCompleted] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setQuizCompleted(localStorage.getItem('quizCompleted') === 'true');
+    }
+  }, []);
+
+  // Update canAccessTopic and allStepsCompleted logic
+  const canAccessTopic = (topicId: string) => {
+    if (quizCompleted) return true;
+    const topicIndex = topics.findIndex(t => t.id === topicId);
+    if (topicIndex === 0) return true;
+    const previousTopic = topics[topicIndex - 1];
+    return completedSteps.has((topicIndex - 1) * 3 + 2); // last step of previous topic
   };
+  const allStepsCompleted = quizCompleted || completedSteps.size === allSteps.length;
 
   // Progress bar: percent complete
   const progress = (stepIndex / (allSteps.length - 1)) * 100;
@@ -182,7 +192,7 @@ export default function LearnPage() {
     }
   };
   const handleNavTopic = (targetIndex: number) => {
-    if (canAccessTopic(targetIndex)) {
+    if (canAccessTopic(topics[targetIndex].id)) {
       // Go to first step of that topic
       setStepIndex(targetIndex * STEP_TYPES.length);
       setSelectedAnswer(null);
@@ -270,16 +280,20 @@ export default function LearnPage() {
               ))}
             </div>
           </div>
+          {/* Caption below image, disappears on hover */}
+          <div className="absolute bottom-0 left-0 right-0 text-center pb-4 pointer-events-none select-none group-hover:opacity-0 transition-opacity duration-200">
+            <span className="inline-block bg-white/80 dark:bg-black/60 text-gray-800 dark:text-gray-100 text-sm rounded-full px-4 py-1 shadow-md">
+              Hover over the image to see details about this practical example
+            </span>
+          </div>
         </div>
-        <div className="space-y-6">
-          <h3 className="text-2xl font-semibold text-gray-900">Practical Examples</h3>
-          {activeTopic.examples.map((example, index) => (
-            <div key={index} className="bg-gray-50 rounded-xl p-6 space-y-3">
-              <h4 className="font-medium text-gray-900 text-lg">{example.title}</h4>
-              <p className="text-gray-600">{example.description}</p>
-              <p className="text-sm text-gray-500 font-mono bg-gray-100 p-2 rounded">{example.settings}</p>
-            </div>
-          ))}
+        <div className="space-y-6 flex flex-col justify-center">
+          <h3 className="text-2xl font-semibold text-gray-900">Practical Example</h3>
+          <div className="bg-gray-50 rounded-xl p-6 space-y-3">
+            <h4 className="font-medium text-gray-900 text-lg">{activeTopic.examples[0].title}</h4>
+            <p className="text-gray-600">{activeTopic.examples[0].description}</p>
+            <p className="text-sm text-gray-500 font-mono bg-gray-100 p-2 rounded">{activeTopic.examples[0].settings}</p>
+          </div>
         </div>
       </div>
     );
@@ -354,9 +368,10 @@ export default function LearnPage() {
               : 'Learn how ISO, Aperture, and Shutter Speed work together to create the perfect shot'
             }
           </p>
-          {/* Topic nav and progress bar moved here */}
-          <div className="flex flex-col items-center space-y-2 mt-6">
-            <div className="flex justify-center space-x-4 w-full max-w-lg">
+          {/* Topic nav and progress bar with overlaid bubbles */}
+          <div className="flex flex-col items-center space-y-2 mt-6 relative">
+            {/* Topic nav bar */}
+            <div className="flex justify-center space-x-4 w-full max-w-lg relative z-0 mb-2">
               {topics.map((topic, index) => (
                 <button
                   key={topic.id}
@@ -364,23 +379,46 @@ export default function LearnPage() {
                   className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 ${
                     topicIndex === index && step !== 'quickcheck'
                       ? 'bg-blue-500 text-white shadow-lg'
-                      : canAccessTopic(index)
+                      : quizCompleted || canAccessTopic(topic.id)
                       ? 'bg-white text-gray-600 hover:bg-gray-50 shadow'
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   }`}
-                  disabled={!canAccessTopic(index)}
+                  disabled={!(quizCompleted || canAccessTopic(topic.id))}
                   style={{ minWidth: 0 }}
                 >
                   {topic.title}
                 </button>
               ))}
             </div>
-            <div className="relative w-full max-w-lg h-1 mt-1">
-              <div className="absolute top-0 left-0 w-full h-full bg-gray-200 rounded-full" />
+            {/* Progress bar with overlayed bubbles */}
+            <div className="relative w-full max-w-lg h-8 mb-2 flex items-center">
+              {/* Progress bar */}
+              <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 rounded-full -translate-y-1/2" />
               <div
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500"
+                className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500 -translate-y-1/2"
                 style={{ width: `${progress}%` }}
               />
+              {/* Overlayed bubbles */}
+              {allSteps.map((s, idx) => {
+                // Evenly space bubbles along the bar
+                const left = (idx / (allSteps.length - 1)) * 100;
+                const isActive = stepIndex === idx;
+                const isCompleted = completedSteps.has(idx) || quizCompleted;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => (quizCompleted || allStepsCompleted) ? setStepIndex(idx) : null}
+                    disabled={!(quizCompleted || allStepsCompleted)}
+                    className={`absolute top-1/2 -translate-y-1/2 w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all
+                      ${isActive ? 'bg-blue-500 text-white border-blue-700 scale-110 shadow-lg' : isCompleted ? 'bg-blue-200 text-blue-700 border-blue-400' : 'bg-gray-200 text-gray-400 border-gray-300'}
+                      ${(quizCompleted || allStepsCompleted) ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                    style={{ left: `calc(${left}% - 14px)` }}
+                    title={`${topics[s.topicIndex].title} - ${s.step.charAt(0).toUpperCase() + s.step.slice(1)}`}
+                  >
+                    {(idx % 3) + 1}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
