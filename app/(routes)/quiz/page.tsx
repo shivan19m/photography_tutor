@@ -193,26 +193,49 @@ export default function QuizPage() {
 
   const applySettings = () => {
     setSettings(tempSettings);
+    setIsCorrect(false);
+    setFeedback('');
   };
 
   const checkAnswer = () => {
     if (isChecking) return; // Prevent multiple clicks
     setIsChecking(true);
     setSettings(tempSettings); // Apply the settings when checking
-    const tolerance = 0.35; // 35% tolerance
+
     const targetSettings = quizQuestions[currentQuestion].targetSettings;
-    const isWithinTolerance = (actual: number, expected: number) => {
-      // Special handling for aperture values
-      if (expected < 2) { // For wide apertures (f/1.4, f/1.8, etc.)
-        return Math.abs(actual - expected) <= 0.4; // More forgiving for wide apertures
+    
+    // Define the ranges for each setting
+    const ranges = {
+      iso: {
+        min: 100,
+        max: 3200,
+        tolerance: (3200 - 100) * 0.1 // 10% of full range
+      },
+      aperture: {
+        min: 1.4,
+        max: 16,
+        tolerance: (16 - 1.4) * 0.1 // 10% of full range
+      },
+      shutterSpeed: {
+        min: 15,
+        max: 4000,
+        tolerance: (4000 - 15) * 0.1 // 10% of full range
       }
-      return Math.abs((actual - expected) / expected) <= tolerance;
     };
+
+    // Check if value is within tolerance of target
+    const isWithinTolerance = (actual: number, expected: number, settingName: keyof typeof ranges) => {
+      const range = ranges[settingName];
+      const tolerance = range.tolerance;
+      return Math.abs(actual - expected) <= tolerance;
+    };
+
     const results = {
-      iso: isWithinTolerance(tempSettings.iso, targetSettings.iso),
-      aperture: isWithinTolerance(tempSettings.aperture, targetSettings.aperture),
-      shutterSpeed: isWithinTolerance(tempSettings.shutterSpeed, targetSettings.shutterSpeed),
+      iso: isWithinTolerance(tempSettings.iso, targetSettings.iso, 'iso'),
+      aperture: isWithinTolerance(tempSettings.aperture, targetSettings.aperture, 'aperture'),
+      shutterSpeed: isWithinTolerance(tempSettings.shutterSpeed, targetSettings.shutterSpeed, 'shutterSpeed'),
     };
+
     const allCorrect = Object.values(results).every(Boolean);
     setAttempts(prev => prev + 1);
     if (allCorrect) {
@@ -448,12 +471,12 @@ export default function QuizPage() {
             <div className="space-y-2">
               <div
                 style={{
-                  filter: `brightness(${Math.log2(tempSettings.iso / 100) * 0.5 + 1}) blur(${Math.max(0, (1 / tempSettings.aperture) * 3)}px)`
+                  filter: `brightness(${Math.log2(settings.iso / 100) * 0.5 + 1}) blur(${Math.max(0, (1 / settings.aperture) * 3)}px)`
                 }}
               >
                 <ShutterSimulator
                   imageSrc={quizQuestions[currentQuestion].baseImage}
-                  shutterSpeed={tempSettings.shutterSpeed}
+                  shutterSpeed={settings.shutterSpeed}
                   onShutterSpeedChange={value => handleSettingsChange('shutterSpeed', value.toString())}
                   hideHeaderAndSlider={true}
                   hideAnnotations={true}
@@ -544,12 +567,20 @@ export default function QuizPage() {
             <p className="text-center font-medium text-white mb-6">Target Image</p>
             <div className="w-full flex flex-col items-center mt-0 md:mt-0" style={{ minHeight: 0 }}>
               {(!isCorrect && attempts < 2) && (
-                <button
-                  onClick={checkAnswer}
-                  className={`w-full max-w-xs px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:from-blue-600 hover:to-purple-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${feedback && !isCorrect ? 'animate-shake' : ''}`}
-                >
-                  Check Settings
-                </button>
+                <>
+                  <button
+                    onClick={applySettings}
+                    className="w-full max-w-xs px-8 py-3 mb-4 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl font-bold text-lg shadow-lg hover:from-gray-600 hover:to-gray-700 hover:shadow-xl transition-all"
+                  >
+                    Preview Changes
+                  </button>
+                  <button
+                    onClick={checkAnswer}
+                    className={`w-full max-w-xs px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:from-blue-600 hover:to-purple-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${feedback && !isCorrect ? 'animate-shake' : ''}`}
+                  >
+                    Check Settings
+                  </button>
+                </>
               )}
               {((!isCorrect && attempts >= 2) || isCorrect) && (
                 <button
