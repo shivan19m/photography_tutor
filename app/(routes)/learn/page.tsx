@@ -94,9 +94,9 @@ const topics = [
     title: 'Shutter Speed',
     description: 'Shutter speed determines how long your camera\'s sensor is exposed to light. Faster speeds freeze motion, while slower speeds can create artistic blur effects.',
     tips: [
-      { text: 'Fast (1/1000+): Sports and action', icon: '🏃‍♂️' },
-      { text: 'Medium (1/125-1/250): General use', icon: '🌳' },
       { text: 'Slow (1/60 or slower): Low light/motion blur', icon: '💫' },
+      { text: 'Medium (1/125-1/250): General use', icon: '🌳' },
+      { text: 'Fast (1/1000+): Sports and action', icon: '🏃‍♂️' },
     ],
     imagePath: '/images/shutter-example.jpg',
     examples: [
